@@ -1,0 +1,447 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0FE37A36A43F44EB2D23844C /* ReceiverDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63447C6EF1DBC9797FE28E2B /* ReceiverDebugView.swift */; };
+		3550EF39B8FB40FAB0359C3D /* ReceiverWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7914659091634654D9D9B84B /* ReceiverWatchApp.swift */; };
+		7C7058BE6B5416568FF82128 /* SevenGoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA1226849D481B7D03933D4 /* SevenGoApp.swift */; };
+		9B3111A7C189D649F804FAF9 /* UserSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C14AD3A160354C48641BE66 /* UserSession.swift */; };
+		C84622E7E552E810A8C59655 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D15E1179276099067276D63 /* SetupView.swift */; };
+		C9B4623D336A0BBBD5457674 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3CE5F4509F0A7E7770DEAC6 /* HomeView.swift */; };
+		DEB6D761A75430B7049C6655 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE4A4D3A64BA090B3C7E981 /* APIClient.swift */; };
+		E83758268E6D3A3AB4CAC179 /* 7GoWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 61F207C16BC6DD1161603A52 /* 7GoWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		EB89A5664768942E943B38C0 /* FriendSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DBCC85BA877A778A9B40FD9 /* FriendSearchView.swift */; };
+		F0EDB2A23E576C5EF57BECEB /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C934BBC22FF42E90BE0BB788 /* LoginView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C64BFF20575D6DEA225883D1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3B212F75ACC4A72991B65201 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B61A6EFD57F88790F4D3BA68;
+			remoteInfo = 7GoWatch;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9B671B909B6EBAF123029960 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				E83758268E6D3A3AB4CAC179 /* 7GoWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0C14AD3A160354C48641BE66 /* UserSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSession.swift; sourceTree = "<group>"; };
+		192316C439A97966E9B8B3D4 /* 7Go.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = 7Go.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1AA1226849D481B7D03933D4 /* SevenGoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SevenGoApp.swift; sourceTree = "<group>"; };
+		4DBCC85BA877A778A9B40FD9 /* FriendSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendSearchView.swift; sourceTree = "<group>"; };
+		61F207C16BC6DD1161603A52 /* 7GoWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = 7GoWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		63447C6EF1DBC9797FE28E2B /* ReceiverDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiverDebugView.swift; sourceTree = "<group>"; };
+		6D15E1179276099067276D63 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
+		6DE4A4D3A64BA090B3C7E981 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		7914659091634654D9D9B84B /* ReceiverWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiverWatchApp.swift; sourceTree = "<group>"; };
+		C934BBC22FF42E90BE0BB788 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		F3CE5F4509F0A7E7770DEAC6 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		7EE4D121D01C73651ABD133A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				192316C439A97966E9B8B3D4 /* 7Go.app */,
+				61F207C16BC6DD1161603A52 /* 7GoWatch.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		80297352A1741F17ABEB7DDE /* ios */ = {
+			isa = PBXGroup;
+			children = (
+				ED43A69208137B51C87EAC62 /* Sources */,
+			);
+			path = ios;
+			sourceTree = "<group>";
+		};
+		940D512CA2049DBAEF5F8DDF /* watch */ = {
+			isa = PBXGroup;
+			children = (
+				A9B499C192291BFC84EBB670 /* Sources */,
+			);
+			path = watch;
+			sourceTree = "<group>";
+		};
+		A9B499C192291BFC84EBB670 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				63447C6EF1DBC9797FE28E2B /* ReceiverDebugView.swift */,
+				7914659091634654D9D9B84B /* ReceiverWatchApp.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		BEC699B75D49270640F1F66D = {
+			isa = PBXGroup;
+			children = (
+				80297352A1741F17ABEB7DDE /* ios */,
+				940D512CA2049DBAEF5F8DDF /* watch */,
+				7EE4D121D01C73651ABD133A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		ED43A69208137B51C87EAC62 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				6DE4A4D3A64BA090B3C7E981 /* APIClient.swift */,
+				4DBCC85BA877A778A9B40FD9 /* FriendSearchView.swift */,
+				F3CE5F4509F0A7E7770DEAC6 /* HomeView.swift */,
+				C934BBC22FF42E90BE0BB788 /* LoginView.swift */,
+				6D15E1179276099067276D63 /* SetupView.swift */,
+				1AA1226849D481B7D03933D4 /* SevenGoApp.swift */,
+				0C14AD3A160354C48641BE66 /* UserSession.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B61A6EFD57F88790F4D3BA68 /* 7GoWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 035815B2832D0F9BBEF8BB27 /* Build configuration list for PBXNativeTarget "7GoWatch" */;
+			buildPhases = (
+				4238930B778B7F2906179FCB /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = 7GoWatch;
+			packageProductDependencies = (
+			);
+			productName = 7GoWatch;
+			productReference = 61F207C16BC6DD1161603A52 /* 7GoWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+		BD16DA69AE48C071EB161840 /* 7Go */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D9B2DB1AC4A5ABDA9FF4EF6B /* Build configuration list for PBXNativeTarget "7Go" */;
+			buildPhases = (
+				2418ED4D3B18FC4882E1E5D2 /* Sources */,
+				9B671B909B6EBAF123029960 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				53A7137C02D2E6CCBB854928 /* PBXTargetDependency */,
+			);
+			name = 7Go;
+			packageProductDependencies = (
+			);
+			productName = 7Go;
+			productReference = 192316C439A97966E9B8B3D4 /* 7Go.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3B212F75ACC4A72991B65201 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					B61A6EFD57F88790F4D3BA68 = {
+						ProvisioningStyle = Automatic;
+					};
+					BD16DA69AE48C071EB161840 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 1C0A3C6B2FFAE9F61FBA3A00 /* Build configuration list for PBXProject "7Go" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = BEC699B75D49270640F1F66D;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 7EE4D121D01C73651ABD133A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BD16DA69AE48C071EB161840 /* 7Go */,
+				B61A6EFD57F88790F4D3BA68 /* 7GoWatch */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2418ED4D3B18FC4882E1E5D2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DEB6D761A75430B7049C6655 /* APIClient.swift in Sources */,
+				EB89A5664768942E943B38C0 /* FriendSearchView.swift in Sources */,
+				C9B4623D336A0BBBD5457674 /* HomeView.swift in Sources */,
+				F0EDB2A23E576C5EF57BECEB /* LoginView.swift in Sources */,
+				C84622E7E552E810A8C59655 /* SetupView.swift in Sources */,
+				7C7058BE6B5416568FF82128 /* SevenGoApp.swift in Sources */,
+				9B3111A7C189D649F804FAF9 /* UserSession.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4238930B778B7F2906179FCB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0FE37A36A43F44EB2D23844C /* ReceiverDebugView.swift in Sources */,
+				3550EF39B8FB40FAB0359C3D /* ReceiverWatchApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		53A7137C02D2E6CCBB854928 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B61A6EFD57F88790F4D3BA68 /* 7GoWatch */;
+			targetProxy = C64BFF20575D6DEA225883D1 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		18ED7E0EF9BF07016840D41C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = M878XBQ25U;
+				INFOPLIST_FILE = watch/Sources/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macminim4pro.sevengo.watchkitapp;
+				PRODUCT_NAME = 7GoWatch;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
+		1C3E7541E3A7592181498AC1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		27699A530B914223DA3016B6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = ios/7Go.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = ios/Sources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.macminim4pro.sevengo;
+				PRODUCT_NAME = 7Go;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		7E7D7F6D956E65C23D9DE3BD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		8A53E291F96AF0A167ECFF5B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = M878XBQ25U;
+				INFOPLIST_FILE = watch/Sources/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macminim4pro.sevengo.watchkitapp;
+				PRODUCT_NAME = 7GoWatch;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Release;
+		};
+		D4F5354FB9C0FEC01E033AAF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = ios/7Go.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = ios/Sources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.macminim4pro.sevengo;
+				PRODUCT_NAME = 7Go;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		035815B2832D0F9BBEF8BB27 /* Build configuration list for PBXNativeTarget "7GoWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				18ED7E0EF9BF07016840D41C /* Debug */,
+				8A53E291F96AF0A167ECFF5B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		1C0A3C6B2FFAE9F61FBA3A00 /* Build configuration list for PBXProject "7Go" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1C3E7541E3A7592181498AC1 /* Debug */,
+				7E7D7F6D956E65C23D9DE3BD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D9B2DB1AC4A5ABDA9FF4EF6B /* Build configuration list for PBXNativeTarget "7Go" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D4F5354FB9C0FEC01E033AAF /* Debug */,
+				27699A530B914223DA3016B6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 3B212F75ACC4A72991B65201 /* Project object */;
+}

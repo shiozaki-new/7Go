@@ -1,0 +1,20 @@
+[
+  {
+    "id": "aya",
+    "displayName": "Aya",
+    "note": "Family",
+    "ntfyTopic": "pulse-aya-replace-with-secret-topic"
+  },
+  {
+    "id": "ken",
+    "displayName": "Ken",
+    "note": "Friend",
+    "ntfyTopic": "pulse-ken-replace-with-secret-topic"
+  },
+  {
+    "id": "mika",
+    "displayName": "Mika",
+    "note": "Partner",
+    "ntfyTopic": "pulse-mika-replace-with-secret-topic"
+  }
+]

@@ -1,0 +1,23 @@
+# Xcode
+*.xcuserstate
+xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Build
+build/
+
+# Server
+server/7go.db
+server/__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+*.DS_Store
+
+# Credentials / secrets
+.env

@@ -1,0 +1,87 @@
+name: 7Go
+
+options:
+  minimumXcodeGenVersion: 2.45.0
+  deploymentTarget:
+    iOS: "18.0"
+    watchOS: "10.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: 6.0
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+  7Go:
+    type: application
+    platform: iOS
+    sources:
+      - path: ios/Sources
+        excludes:
+          - Info.plist
+    dependencies:
+      - target: 7GoWatch
+        embed: true
+        link: false
+    entitlements:
+      path: ios/7Go.entitlements
+      properties:
+        com.apple.developer.applesignin:
+          - Default
+    info:
+      path: ios/Sources/Info.plist
+      properties:
+        CFBundleDisplayName: 7Go
+        UIApplicationSupportsIndirectInputEvents: true
+        UILaunchScreen: {}
+        UIRequiresFullScreen: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        # 開発用: ローカルサーバーへの HTTP 接続を許可
+        # 本番では HTTPS + APNs に切り替えて削除すること
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.macminim4pro.sevengo
+        PRODUCT_NAME: 7Go
+
+  7GoWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: watch/Sources
+        excludes:
+          - Info.plist
+    info:
+      path: watch/Sources/Info.plist
+      properties:
+        CFBundleDisplayName: 7Go
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: com.macminim4pro.sevengo
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.macminim4pro.sevengo.watchkitapp
+        PRODUCT_NAME: 7GoWatch
+
+schemes:
+  7Go:
+    build:
+      targets:
+        7Go: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+
+  7GoWatch:
+    build:
+      targets:
+        7GoWatch: all
+    run:
+      config: Debug
+    archive:
+      config: Release
