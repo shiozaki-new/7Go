@@ -1,64 +1,96 @@
 import SwiftUI
 
-/// 受信セットアップ画面
-/// 自分の ntfy トピックを確認し、ntfy アプリで購読するためのガイド
+/// 設定画面
 struct SetupView: View {
     @Environment(UserSession.self) var session
     @Environment(\.dismiss) var dismiss
     @State private var copied = false
+    @State private var showSignOutAlert = false
 
-    private var topic: String { session.currentUser?.ntfyTopic ?? "" }
-    private var ntfyURL: URL? { URL(string: "ntfy://\(topic)") }
+    private var user: AppUser? { session.currentUser }
+    private var topic: String { user?.ntfyTopic ?? "" }
+
+    private var appVersion: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "-"
+        return "\(version) (\(build))"
+    }
 
     var body: some View {
         NavigationStack {
-            List {
+            Form {
+                // MARK: - アカウント
+                Section("アカウント") {
+                    LabeledContent("表示名") {
+                        Text(user?.displayName ?? "-")
+                    }
+                    LabeledContent("ユーザー ID") {
+                        Text(user?.userId ?? "-")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                    }
+                }
+
+                // MARK: - 通知設定
                 Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("あなたの受信トピック")
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("ntfy トピック")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Text(topic)
                             .font(.system(.body, design: .monospaced))
                             .textSelection(.enabled)
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 2)
 
                     Button {
                         UIPasteboard.general.string = topic
                         copied = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copied = false }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            copied = false
+                        }
                     } label: {
-                        Label(copied ? "コピーしました ✓" : "トピックをコピー", systemImage: "doc.on.doc")
+                        Label(
+                            copied ? "コピーしました" : "トピックをコピー",
+                            systemImage: copied ? "checkmark" : "doc.on.doc"
+                        )
                     }
-                } header: {
-                    Text("受信設定")
-                } footer: {
-                    Text("このトピックを ntfy アプリで購読すると、友達からのサインが Apple Watch に届きます。")
-                }
 
-                Section {
-                    if let url = ntfyURL {
-                        Link(destination: url) {
-                            Label("ntfy アプリで購読する", systemImage: "arrow.up.right.square")
+                    if let ntfyURL = URL(string: "ntfy://\(topic)") {
+                        Link(destination: ntfyURL) {
+                            Label("ntfy アプリで開く", systemImage: "arrow.up.right.square")
                         }
                     }
 
                     Link(destination: URL(string: "https://apps.apple.com/app/ntfy/id1625396347")!) {
-                        Label("ntfy アプリをインストール (App Store)", systemImage: "arrow.down.app")
+                        Label("ntfy を App Store で見る", systemImage: "arrow.down.app")
                     }
                 } header: {
-                    Text("ntfy セットアップ")
+                    Text("通知設定")
                 } footer: {
-                    Text("ntfy アプリ → 通知 → Apple Watch 通知も ON にしてください。")
+                    Text("通知を受け取るには ntfy アプリでこのトピックを購読してください。")
                 }
 
+                // MARK: - アプリについて
+                Section("アプリについて") {
+                    LabeledContent("バージョン", value: appVersion)
+
+                    Link(destination: URL(string: "https://example.com/privacy")!) {
+                        Label("プライバシーポリシー", systemImage: "hand.raised")
+                    }
+                }
+
+                // MARK: - サインアウト
                 Section {
                     Button(role: .destructive) {
-                        session.signOut()
-                        dismiss()
+                        showSignOutAlert = true
                     } label: {
-                        Label("サインアウト", systemImage: "rectangle.portrait.and.arrow.right")
+                        HStack {
+                            Spacer()
+                            Text("サインアウト")
+                            Spacer()
+                        }
                     }
                 }
             }
@@ -68,6 +100,15 @@ struct SetupView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("閉じる") { dismiss() }
                 }
+            }
+            .alert("サインアウト", isPresented: $showSignOutAlert) {
+                Button("キャンセル", role: .cancel) {}
+                Button("サインアウト", role: .destructive) {
+                    session.signOut()
+                    dismiss()
+                }
+            } message: {
+                Text("サインアウトしてもよろしいですか？")
             }
         }
     }

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -86,6 +87,13 @@ class Handler(BaseHTTPRequestHandler):
             self.add_friend()
         elif self.path == "/signal":
             self.send_signal()
+        else:
+            self.err(404, "Not found")
+
+    def do_DELETE(self) -> None:
+        m = re.match(r"^/friends/([^/]+)$", self.path)
+        if m:
+            self.remove_friend(m.group(1))
         else:
             self.err(404, "Not found")
 
@@ -172,6 +180,18 @@ class Handler(BaseHTTPRequestHandler):
                 pass
         self.ok({"ok": True})
 
+    def remove_friend(self, friend_id: str) -> None:
+        me = self.auth()
+        if not me:
+            return
+        friend_id = friend_id.strip()
+        if not friend_id:
+            self.err(400, "friendId required")
+            return
+        with _conn() as c:
+            c.execute("DELETE FROM friends WHERE user_id = ? AND friend_id = ?", (me["id"], friend_id))
+        self.ok({"ok": True})
+
     def send_signal(self) -> None:
         me = self.auth()
         if not me:
@@ -232,6 +252,7 @@ class Handler(BaseHTTPRequestHandler):
     def _cors(self) -> None:
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
 
     def log_message(self, fmt: str, *args: Any) -> None:
         print(f"[7go] {self.address_string()} {fmt % args}")

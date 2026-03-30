@@ -1,5 +1,8 @@
 import SwiftUI
 import AuthenticationServices
+#if DEBUG
+import UIKit
+#endif
 
 struct AppUser: Codable {
     let userId: String
@@ -47,6 +50,31 @@ final class UserSession {
             loginError = error.localizedDescription
         }
     }
+
+#if DEBUG
+    func handleLocalDebugSignIn() async {
+        let appleID = debugAppleID()
+        let displayName = UserDefaults.standard.string(forKey: "debugDisplayName")
+            ?? UIDevice.current.name
+
+        do {
+            let user = try await APIClient.shared.register(appleID: appleID, displayName: displayName)
+            persist(user)
+            loginError = nil
+        } catch {
+            loginError = "デバッグログイン失敗: \(error.localizedDescription)"
+        }
+    }
+
+    private func debugAppleID() -> String {
+        if let existing = UserDefaults.standard.string(forKey: "debugAppleID"), !existing.isEmpty {
+            return existing
+        }
+        let generated = "debug-\(UUID().uuidString.lowercased())"
+        UserDefaults.standard.set(generated, forKey: "debugAppleID")
+        return generated
+    }
+#endif
 
     func signOut() {
         currentUser = nil
