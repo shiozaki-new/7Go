@@ -22,6 +22,7 @@ struct SevenGoWatchApp: App {
 final class AppDelegate: NSObject, WKApplicationDelegate {
     func applicationDidFinishLaunching() {
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+        WatchConnectivityManager.shared.activate()
         Task {
             await SignalStore.shared.refreshNotificationStatus()
         }
@@ -39,7 +40,7 @@ final class AppDelegate: NSObject, WKApplicationDelegate {
             options: [.alert, .sound, .badge]
         ) { _, error in
             if let error {
-                print("通知許可エラー: \(error.localizedDescription)")
+                print("[7Go] 通知許可エラー: \(error.localizedDescription)")
             }
 
             Task {

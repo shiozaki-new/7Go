@@ -89,7 +89,6 @@ struct FriendSearchView: View {
 
     // MARK: - Debounced Search
 
-    /// 0.3秒のデバウンスで検索を実行する
     private func scheduleSearch(for text: String) {
         searchTask?.cancel()
 
@@ -120,11 +119,10 @@ struct FriendSearchView: View {
         do {
             let token = session.currentUser?.sessionToken ?? ""
             let found = try await APIClient.shared.searchUsers(query: q, token: token)
-            // クエリが変わっていなければ結果を反映
             guard !Task.isCancelled else { return }
             results = found
         } catch is CancellationError {
-            // キャンセルは無視
+            // ignore
         } catch {
             results = []
             errorMessage = friendlyError(from: error)
@@ -135,7 +133,7 @@ struct FriendSearchView: View {
         do {
             let token = session.currentUser?.sessionToken ?? ""
             try await APIClient.shared.addFriend(friendId: user.id, token: token)
-            withAnimation { addedIds.insert(user.id) }
+            _ = withAnimation { addedIds.insert(user.id) }
         } catch {
             errorMessage = "友達の追加に失敗しました。もう一度お試しください。"
         }
@@ -152,18 +150,7 @@ struct FriendSearchView: View {
 
     private func friendlyError(from error: Error) -> String {
         if let apiError = error as? APIError {
-            switch apiError {
-            case .networkError:
-                return "ネットワークに接続できません。通信状況を確認してください。"
-            case .serverError(let code, _):
-                return "サーバーエラーが発生しました（\(code)）。しばらくしてからお試しください。"
-            case .decodingError:
-                return "データの読み込みに失敗しました。アプリを更新してください。"
-            case .unauthorized:
-                return "認証の有効期限が切れました。再ログインしてください。"
-            case .notFound:
-                return "指定されたリソースが見つかりませんでした。"
-            }
+            return apiError.localizedDescription
         }
         return "通信エラーが発生しました。もう一度お試しください。"
     }
@@ -186,6 +173,9 @@ private struct FriendSearchRow: View {
             statusView
         }
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(user.displayName)")
+        .accessibilityValue(isAdded ? "追加済み" : "未追加")
     }
 
     private var avatar: some View {
@@ -193,8 +183,8 @@ private struct FriendSearchRow: View {
             .font(.headline)
             .fontWeight(.semibold)
             .foregroundStyle(.white)
-            .frame(width: 40, height: 40)
-            .background(avatarColor, in: Circle())
+            .frame(width: 44, height: 44)
+            .background(avatarColor.gradient, in: Circle())
     }
 
     private var nameLabel: some View {
@@ -230,15 +220,12 @@ private struct FriendSearchRow: View {
         }
     }
 
-    /// ユーザーIDに基づく一貫した色を返す
     private var avatarColor: Color {
         let colors: [Color] = [.blue, .purple, .orange, .pink, .teal, .indigo, .mint, .cyan]
         let hash = abs(user.id.hashValue)
         return colors[hash % colors.count]
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     FriendSearchView()

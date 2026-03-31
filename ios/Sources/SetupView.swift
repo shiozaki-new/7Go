@@ -1,14 +1,12 @@
 import SwiftUI
 
-/// 設定画面
 struct SetupView: View {
     @Environment(UserSession.self) var session
     @Environment(\.dismiss) var dismiss
-    @State private var copied = false
     @State private var showSignOutAlert = false
+    @State private var notificationStatus: String = "確認中..."
 
     private var user: AppUser? { session.currentUser }
-    private var topic: String { user?.ntfyTopic ?? "" }
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-"
@@ -32,52 +30,60 @@ struct SetupView: View {
                     }
                 }
 
-                // MARK: - 通知設定
+                // MARK: - 通知
                 Section {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("ntfy トピック")
-                            .font(.caption)
+                    HStack {
+                        Label("通知", systemImage: "bell.fill")
+                        Spacer()
+                        Text(notificationStatus)
                             .foregroundStyle(.secondary)
-                        Text(topic)
-                            .font(.system(.body, design: .monospaced))
-                            .textSelection(.enabled)
                     }
-                    .padding(.vertical, 2)
 
-                    Button {
-                        UIPasteboard.general.string = topic
-                        copied = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            copied = false
+                    if !NotificationManager.shared.isAuthorized {
+                        Button {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            Label("通知設定を開く", systemImage: "gear")
                         }
-                    } label: {
-                        Label(
-                            copied ? "コピーしました" : "トピックをコピー",
-                            systemImage: copied ? "checkmark" : "doc.on.doc"
-                        )
-                    }
-
-                    if let ntfyURL = URL(string: "ntfy://\(topic)") {
-                        Link(destination: ntfyURL) {
-                            Label("ntfy アプリで開く", systemImage: "arrow.up.right.square")
-                        }
-                    }
-
-                    Link(destination: URL(string: "https://apps.apple.com/app/ntfy/id1625396347")!) {
-                        Label("ntfy を App Store で見る", systemImage: "arrow.down.app")
+                        .accessibilityHint("システム設定で通知を許可します")
                     }
                 } header: {
                     Text("通知設定")
                 } footer: {
-                    Text("通知を受け取るには ntfy アプリでこのトピックを購読してください。")
+                    Text("シグナルを受け取るには通知を許可してください。")
+                }
+
+                // MARK: - Apple Watch
+                Section("Apple Watch") {
+                    HStack {
+                        Label("接続状態", systemImage: "applewatch")
+                        Spacer()
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(WatchConnectivityManager.shared.isWatchPaired ? .green : .orange)
+                                .frame(width: 8, height: 8)
+                            Text(watchStatusText)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
 
                 // MARK: - アプリについて
                 Section("アプリについて") {
                     LabeledContent("バージョン", value: appVersion)
 
-                    Link(destination: URL(string: "https://example.com/privacy")!) {
-                        Label("プライバシーポリシー", systemImage: "hand.raised")
+                    if let privacyURL = URL(string: "https://7go.app/privacy") {
+                        Link(destination: privacyURL) {
+                            Label("プライバシーポリシー", systemImage: "hand.raised.fill")
+                        }
+                    }
+
+                    if let termsURL = URL(string: "https://7go.app/terms") {
+                        Link(destination: termsURL) {
+                            Label("利用規約", systemImage: "doc.text.fill")
+                        }
                     }
                 }
 
@@ -110,6 +116,38 @@ struct SetupView: View {
             } message: {
                 Text("サインアウトしてもよろしいですか？")
             }
+            .task {
+                await refreshNotificationStatus()
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private var watchStatusText: String {
+        let wc = WatchConnectivityManager.shared
+        if wc.isWatchReachable {
+            return "接続中"
+        } else if wc.isWatchPaired {
+            return "ペアリング済み"
+        } else {
+            return "未接続"
+        }
+    }
+
+    private func refreshNotificationStatus() async {
+        await NotificationManager.shared.refreshStatus()
+        let status = NotificationManager.shared.authorizationStatus
+        if status == .authorized {
+            notificationStatus = "許可済み"
+        } else if status == .denied {
+            notificationStatus = "拒否"
+        } else if status == .provisional {
+            notificationStatus = "仮許可"
+        } else if status == .notDetermined {
+            notificationStatus = "未設定"
+        } else {
+            notificationStatus = "不明"
         }
     }
 }
