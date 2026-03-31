@@ -1,5 +1,39 @@
 import SwiftUI
 
+// MARK: - Signal Pattern
+
+enum SignalPattern: String, CaseIterable, Identifiable {
+    case poke = "ツンツン"
+    case wave = "おーい"
+    case urgent = "急ぎ！"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .poke: "hand.point.up.fill"
+        case .wave: "hand.wave.fill"
+        case .urgent: "exclamationmark.circle.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .poke: .blue
+        case .wave: .purple
+        case .urgent: .orange
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .poke: "ツンツン 👆"
+        case .wave: "おーい 👋"
+        case .urgent: "急ぎ！ 🚨"
+        }
+    }
+}
+
 // MARK: - Toast Model
 
 fileprivate enum ToastStyle {
@@ -39,6 +73,7 @@ final class HomeViewModel {
     var isLoading = false
     var isInitialLoad = true
     var sendingToId: String?
+    var selectedPattern: SignalPattern = .poke
     fileprivate var toast: ToastMessage?
 
     private var toastDismissTask: Task<Void, Never>?
@@ -59,14 +94,14 @@ final class HomeViewModel {
         }
     }
 
-    func send(to friend: Friend, token: String) async {
+    func send(to friend: Friend, pattern: SignalPattern, token: String) async {
         guard sendingToId == nil else { return }
         sendingToId = friend.id
         defer { sendingToId = nil }
         do {
-            try await APIClient.shared.sendSignal(to: friend.id, token: token)
+            try await APIClient.shared.sendSignal(to: friend.id, pattern: pattern.rawValue, token: token)
             triggerHaptic(.success)
-            showToast("\(friend.displayName) に送信しました", style: .success)
+            showToast("\(friend.displayName) に「\(pattern.rawValue)」を送信しました", style: .success)
         } catch {
             triggerHaptic(.error)
             showToast(friendlyMessage(from: error), style: .error)
@@ -141,9 +176,10 @@ struct HomeView: View {
                     Button {
                         showSetup = true
                     } label: {
-                        Image(systemName: "gearshape")
+                        Image(systemName: "gearshape.fill")
                             .fontWeight(.medium)
                     }
+                    .accessibilityLabel("設定")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -152,6 +188,7 @@ struct HomeView: View {
                         Image(systemName: "person.badge.plus")
                             .fontWeight(.medium)
                     }
+                    .accessibilityLabel("友達を追加")
                 }
             }
             .overlay(alignment: .top) {
@@ -189,18 +226,23 @@ struct HomeView: View {
         VStack(spacing: 20) {
             Spacer()
 
-            Image(systemName: "person.2.slash")
-                .font(.system(size: 64))
-                .foregroundStyle(.tertiary)
-                .symbolEffect(.pulse, options: .repeating.speed(0.5))
+            ZStack {
+                Circle()
+                    .fill(Color.secondary.opacity(0.08))
+                    .frame(width: 120, height: 120)
+
+                Image(systemName: "person.2.slash")
+                    .font(.system(size: 48))
+                    .foregroundStyle(.tertiary)
+                    .symbolEffect(.pulse, options: .repeating.speed(0.5))
+            }
 
             VStack(spacing: 8) {
                 Text("まだ友達がいません")
                     .font(.title3)
                     .fontWeight(.semibold)
-                    .foregroundStyle(.primary)
 
-                Text("友達を追加して、サインを送り合おう")
+                Text("友達を追加して、シグナルを送り合おう")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -212,10 +254,10 @@ struct HomeView: View {
                 Label("友達を追加する", systemImage: "person.badge.plus")
                     .font(.headline)
                     .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 14)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.accentColor)
+            .buttonBorderShape(.capsule)
             .padding(.top, 8)
 
             Spacer()
@@ -227,20 +269,47 @@ struct HomeView: View {
 
     private var friendsList: some View {
         List {
-            ForEach(vm.friends) { friend in
-                FriendRow(
-                    friend: friend,
-                    isSending: vm.sendingToId == friend.id,
-                    isDisabled: vm.sendingToId != nil,
-                    onSend: {
-                        Task { await vm.send(to: friend, token: token) }
+            // Signal Pattern Picker
+            Section {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(SignalPattern.allCases) { pattern in
+                            PatternChip(
+                                pattern: pattern,
+                                isSelected: vm.selectedPattern == pattern
+                            ) {
+                                withAnimation(.spring(duration: 0.2)) {
+                                    vm.selectedPattern = pattern
+                                }
+                            }
+                        }
                     }
-                )
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
+                }
+                .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
             }
-            .onDelete { indexSet in
-                guard let index = indexSet.first else { return }
-                let friend = vm.friends[index]
-                Task { await vm.remove(friend: friend, token: token) }
+
+            // Friends
+            Section {
+                ForEach(vm.friends) { friend in
+                    FriendRow(
+                        friend: friend,
+                        pattern: vm.selectedPattern,
+                        isSending: vm.sendingToId == friend.id,
+                        isDisabled: vm.sendingToId != nil,
+                        onSend: {
+                            Task { await vm.send(to: friend, pattern: vm.selectedPattern, token: token) }
+                        }
+                    )
+                }
+                .onDelete { indexSet in
+                    guard let index = indexSet.first else { return }
+                    let friend = vm.friends[index]
+                    Task { await vm.remove(friend: friend, token: token) }
+                }
+            } header: {
+                Text("友達 (\(vm.friends.count))")
             }
         }
         .listStyle(.insetGrouped)
@@ -311,16 +380,58 @@ struct HomeView: View {
     }
 }
 
+// MARK: - Pattern Chip
+
+private struct PatternChip: View {
+    let pattern: SignalPattern
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 6) {
+                Image(systemName: pattern.icon)
+                    .font(.caption)
+                Text(pattern.rawValue)
+                    .font(.subheadline.weight(.medium))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(
+                isSelected ? pattern.color.opacity(0.15) : Color.secondary.opacity(0.08),
+                in: Capsule()
+            )
+            .foregroundStyle(isSelected ? pattern.color : .secondary)
+            .overlay(
+                Capsule()
+                    .stroke(isSelected ? pattern.color.opacity(0.3) : .clear, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(pattern.rawValue)パターン")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
 // MARK: - Friend Row
 
 private struct FriendRow: View {
     let friend: Friend
+    let pattern: SignalPattern
     let isSending: Bool
     let isDisabled: Bool
     let onSend: () -> Void
 
+    @State private var sendSuccess = false
+
     private var avatarInitial: String {
         String(friend.displayName.prefix(1))
+    }
+
+    private var avatarColor: Color {
+        let colors: [Color] = [.blue, .purple, .orange, .pink, .teal, .indigo, .mint, .cyan]
+        let hash = abs(friend.id.hashValue)
+        return colors[hash % colors.count]
     }
 
     var body: some View {
@@ -329,17 +440,16 @@ private struct FriendRow: View {
             Text(avatarInitial)
                 .font(.system(.body, design: .rounded, weight: .bold))
                 .foregroundStyle(.white)
-                .frame(width: 40, height: 40)
-                .background(
-                    Circle()
-                        .fill(Color.accentColor.gradient)
-                )
+                .frame(width: 44, height: 44)
+                .background(avatarColor.gradient, in: Circle())
 
             // Name
-            Text(friend.displayName)
-                .font(.body)
-                .fontWeight(.medium)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(friend.displayName)
+                    .font(.body)
+                    .fontWeight(.medium)
+                    .lineLimit(1)
+            }
 
             Spacer()
 
@@ -350,22 +460,25 @@ private struct FriendRow: View {
                 ZStack {
                     if isSending {
                         ProgressView()
-                            .tint(Color.accentColor)
+                            .tint(pattern.color)
+                    } else if sendSuccess {
+                        Image(systemName: "checkmark")
+                            .font(.body.weight(.bold))
+                            .foregroundStyle(.green)
+                            .transition(.scale.combined(with: .opacity))
                     } else {
-                        Image(systemName: "hand.tap.fill")
+                        Image(systemName: pattern.icon)
                             .font(.title3)
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(pattern.color)
                             .symbolEffect(.bounce, value: isSending)
                     }
                 }
-                .frame(width: 44, height: 44)
-                .background(
-                    Circle()
-                        .fill(Color.accentColor.opacity(0.1))
-                )
+                .frame(width: 48, height: 48)
+                .background(pattern.color.opacity(0.1), in: Circle())
             }
             .buttonStyle(.plain)
             .disabled(isDisabled)
+            .accessibilityLabel("\(friend.displayName)に\(pattern.rawValue)を送る")
         }
         .padding(.vertical, 4)
     }

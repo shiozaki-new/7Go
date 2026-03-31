@@ -41,7 +41,6 @@ struct APIClient: Sendable {
     private let session: URLSession
 
     private init() {
-        // Info.plist の SERVER_URL を読み取り、未設定時はフォールバック
         let urlString: String
         if let plistValue = Bundle.main.object(forInfoDictionaryKey: "SERVER_URL") as? String,
            !plistValue.isEmpty,
@@ -53,7 +52,6 @@ struct APIClient: Sendable {
 
         var sanitized = urlString
 #if !DEBUG
-        // Release ビルドでは HTTPS を強制
         if sanitized.hasPrefix("http://") {
             sanitized = sanitized.replacingOccurrences(of: "http://", with: "https://")
         }
@@ -67,7 +65,6 @@ struct APIClient: Sendable {
         }
         self.baseURL = url
 
-        // タイムアウト 15 秒
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 15
         config.timeoutIntervalForResource = 30
@@ -89,10 +86,23 @@ struct APIClient: Sendable {
         )
     }
 
+    // MARK: - Device Token
+
+    func registerDeviceToken(token: String, sessionToken: String) async throws {
+        struct Req: Encodable { let deviceToken: String; let platform: String }
+        let _: EmptyResponse = try await post(
+            "device-token",
+            body: Req(deviceToken: token, platform: "ios"),
+            token: sessionToken
+        )
+    }
+
     // MARK: - Friends
 
     func searchUsers(query: String, token: String) async throws -> [Friend] {
-        var components = URLComponents(url: baseURL.appending(path: "users/search"), resolvingAgainstBaseURL: false)!
+        guard var components = URLComponents(url: baseURL.appending(path: "users/search"), resolvingAgainstBaseURL: false) else {
+            throw APIError.networkError(underlying: "検索URLの生成に失敗しました")
+        }
         components.queryItems = [URLQueryItem(name: "q", value: query)]
         guard let url = components.url else {
             throw APIError.networkError(underlying: "検索URLの生成に失敗しました")
@@ -116,9 +126,9 @@ struct APIClient: Sendable {
 
     // MARK: - Signal
 
-    func sendSignal(to friendId: String, token: String) async throws {
-        struct Req: Encodable { let friendId: String }
-        let _: EmptyResponse = try await post("signal", body: Req(friendId: friendId), token: token)
+    func sendSignal(to friendId: String, pattern: String = "ツンツン", token: String) async throws {
+        struct Req: Encodable { let friendId: String; let pattern: String }
+        let _: EmptyResponse = try await post("signal", body: Req(friendId: friendId, pattern: pattern), token: token)
     }
 
     // MARK: - Private Helpers
@@ -151,7 +161,6 @@ struct APIClient: Sendable {
         return try await perform(request)
     }
 
-    /// 共通のリクエスト実行・レスポンス検証・デコード処理
     private func perform<T: Decodable>(_ request: URLRequest) async throws -> T {
         let data: Data
         let response: URLResponse

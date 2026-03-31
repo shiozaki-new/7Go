@@ -13,9 +13,9 @@ final class SignalStore {
     var lastReceivedDate: Date?
     var notificationPermission: UNAuthorizationStatus = .notDetermined
     var showPulse: Bool = false
+    var signalCount: Int = 0
     private var lastNotificationIdentifier: String?
 
-    /// 通知許可状態に基づく接続判定
     var isConnected: Bool {
         notificationPermission == .authorized || notificationPermission == .provisional
     }
@@ -53,6 +53,7 @@ final class SignalStore {
         lastNotificationIdentifier = notificationID
         lastSenderName = sender
         lastReceivedDate = Date()
+        signalCount += 1
 
         showPulse = true
         WKInterfaceDevice.current().play(.notification)
@@ -63,7 +64,6 @@ final class SignalStore {
         }
     }
 
-    /// 通知許可状態を更新する
     func refreshNotificationStatus() async {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         notificationPermission = settings.authorizationStatus
@@ -71,13 +71,13 @@ final class SignalStore {
 
     var lastReceivedText: String {
         guard let name = lastSenderName, let date = lastReceivedDate else {
-            return "まだ通知はありません"
+            return "まだシグナルはありません"
         }
         let formatter = RelativeDateTimeFormatter()
         formatter.locale = Locale(identifier: "ja_JP")
         formatter.unitsStyle = .abbreviated
         let relative = formatter.localizedString(for: date, relativeTo: Date())
-        return "\(name) - \(relative)"
+        return "\(name) — \(relative)"
     }
 }
 
@@ -89,34 +89,48 @@ struct ContentView: View {
     @State private var animatePulse = false
 
     var body: some View {
-        VStack(spacing: 12) {
-            Text("7Go")
-                .font(.system(.title2, design: .rounded, weight: .bold))
-                .foregroundStyle(.tint)
+        VStack(spacing: 8) {
+            // Header
+            HStack {
+                Text("7Go")
+                    .font(.system(.headline, design: .rounded, weight: .bold))
+                    .foregroundStyle(.tint)
+                Spacer()
+                if store.signalCount > 0 {
+                    Text("\(store.signalCount)")
+                        .font(.system(.caption2, design: .rounded, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.tint, in: Capsule())
+                }
+            }
+            .padding(.horizontal, 4)
 
             Spacer()
 
+            // Signal indicator
             ZStack {
                 if animatePulse {
                     Circle()
                         .stroke(Color.accentColor.opacity(0.3), lineWidth: 2)
-                        .frame(width: 80, height: 80)
+                        .frame(width: 70, height: 70)
                         .scaleEffect(animatePulse ? 1.6 : 1.0)
                         .opacity(animatePulse ? 0 : 0.8)
 
                     Circle()
                         .stroke(Color.accentColor.opacity(0.2), lineWidth: 1.5)
-                        .frame(width: 80, height: 80)
+                        .frame(width: 70, height: 70)
                         .scaleEffect(animatePulse ? 2.0 : 1.0)
                         .opacity(animatePulse ? 0 : 0.6)
                 }
 
                 Circle()
                     .fill(Color.accentColor.opacity(0.15))
-                    .frame(width: 72, height: 72)
+                    .frame(width: 64, height: 64)
                     .overlay {
                         Image(systemName: "hand.tap.fill")
-                            .font(.system(size: 30))
+                            .font(.system(size: 26))
                             .foregroundStyle(.tint)
                             .symbolEffect(.pulse, options: .repeating,
                                           isActive: animatePulse)
@@ -127,18 +141,20 @@ struct ContentView: View {
 
             Spacer()
 
+            // Last signal info
             VStack(spacing: 4) {
-                Text("最後の通知")
-                    .font(.caption2)
+                Text("最後のシグナル")
+                    .font(.system(size: 10))
                     .foregroundStyle(.secondary)
 
                 Text(store.lastReceivedText)
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
             }
 
+            // Status
             HStack(spacing: 4) {
                 Circle()
                     .fill(store.statusColor)
@@ -148,8 +164,8 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 2)
         .task {
             await store.refreshNotificationStatus()
         }

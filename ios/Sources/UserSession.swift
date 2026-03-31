@@ -16,15 +16,37 @@ struct AppUser: Codable {
 final class UserSession {
     var currentUser: AppUser?
     var loginError: String?
+    var hasCompletedOnboarding: Bool
 
     var isLoggedIn: Bool { currentUser != nil }
 
+    private static let userKey = "currentUser"
+
+    init() {
+        self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+    }
+
+    func completeOnboarding() {
+        hasCompletedOnboarding = true
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+    }
+
     func restoreSession() async {
-        guard
-            let data = UserDefaults.standard.data(forKey: "currentUser"),
-            let user = try? JSONDecoder().decode(AppUser.self, from: data)
-        else { return }
-        currentUser = user
+        // Keychain から復元（新方式）
+        if let data = KeychainHelper.load(forKey: Self.userKey),
+           let user = try? JSONDecoder().decode(AppUser.self, from: data) {
+            currentUser = user
+            syncToWatch(user)
+            return
+        }
+
+        // UserDefaults からのマイグレーション（旧方式）
+        if let data = UserDefaults.standard.data(forKey: Self.userKey),
+           let user = try? JSONDecoder().decode(AppUser.self, from: data) {
+            persist(user) // Keychainに移行
+            UserDefaults.standard.removeObject(forKey: Self.userKey) // 旧データ削除
+            return
+        }
     }
 
     func handleSignIn(result: Result<ASAuthorization, Error>) async {
@@ -41,6 +63,8 @@ final class UserSession {
                 let user = try await APIClient.shared.register(appleID: appleID, displayName: name)
                 persist(user)
                 loginError = nil
+                await requestNotificationsIfNeeded()
+                registerDeviceToken(for: user)
             } catch {
                 loginError = "ログイン失敗: \(error.localizedDescription)"
             }
@@ -61,6 +85,8 @@ final class UserSession {
             let user = try await APIClient.shared.register(appleID: appleID, displayName: displayName)
             persist(user)
             loginError = nil
+            await requestNotificationsIfNeeded()
+            registerDeviceToken(for: user)
         } catch {
             loginError = "デバッグログイン失敗: \(error.localizedDescription)"
         }
@@ -78,13 +104,41 @@ final class UserSession {
 
     func signOut() {
         currentUser = nil
-        UserDefaults.standard.removeObject(forKey: "currentUser")
+        KeychainHelper.delete(forKey: Self.userKey)
+        UserDefaults.standard.removeObject(forKey: Self.userKey) // 旧データも念のため削除
     }
+
+    // MARK: - Private
 
     private func persist(_ user: AppUser) {
         currentUser = user
         if let data = try? JSONEncoder().encode(user) {
-            UserDefaults.standard.set(data, forKey: "currentUser")
+            KeychainHelper.save(data, forKey: Self.userKey)
+        }
+        syncToWatch(user)
+    }
+
+    private func syncToWatch(_ user: AppUser) {
+        WatchConnectivityManager.shared.syncUserContext(
+            displayName: user.displayName,
+            userId: user.userId
+        )
+    }
+
+    private func requestNotificationsIfNeeded() async {
+        let manager = NotificationManager.shared
+        if !manager.isAuthorized {
+            await manager.requestPermission()
+        }
+    }
+
+    private func registerDeviceToken(for user: AppUser) {
+        guard let token = NotificationManager.shared.deviceToken else { return }
+        Task {
+            try? await APIClient.shared.registerDeviceToken(
+                token: token,
+                sessionToken: user.sessionToken
+            )
         }
     }
 }
