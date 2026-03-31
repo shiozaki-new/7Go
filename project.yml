@@ -20,7 +20,7 @@ settings:
     Debug:
       SERVER_URL: "http://192.168.1.7:8787"
     Release:
-      SERVER_URL: "https://your-server.example.com"
+      SERVER_URL: "https://api.7go.app"
 
 targets:
   7Go:
@@ -44,6 +44,7 @@ targets:
         CFBundleDisplayName: 7Go
         CFBundleShortVersionString: "1.0.0"
         CFBundleVersion: "1"
+        ITSAppUsesNonExemptEncryption: false
         UIApplicationSupportsIndirectInputEvents: true
         UILaunchScreen: {}
         SERVER_URL: $(SERVER_URL)
@@ -68,9 +69,17 @@ targets:
     postCompileScripts:
       - script: |
           if [ "${CONFIGURATION}" = "Release" ]; then
-            if [ "${SERVER_URL}" = "https://your-server.example.com" ]; then
-              echo "warning: SERVER_URL is still set to placeholder. Update it before shipping."
+            if [ -z "${SERVER_URL}" ]; then
+              echo "error: SERVER_URL must not be empty for Release."
+              exit 1
             fi
+            case "${SERVER_URL}" in
+              https://*) ;;
+              *)
+                echo "error: Release SERVER_URL must use HTTPS."
+                exit 1
+                ;;
+            esac
           fi
         name: Validate SERVER_URL
         basedOnDependencyAnalysis: false
@@ -84,6 +93,7 @@ targets:
         excludes:
           - Info.plist
       - path: watch/Assets.xcassets
+      - path: watch/PrivacyInfo.xcprivacy
     dependencies:
       - sdk: UserNotifications.framework
     info:
@@ -92,6 +102,7 @@ targets:
         CFBundleDisplayName: 7Go
         CFBundleShortVersionString: "1.0.0"
         CFBundleVersion: "1"
+        ITSAppUsesNonExemptEncryption: false
         WKApplication: true
         WKCompanionAppBundleIdentifier: com.macminim4pro.sevengo
     settings:

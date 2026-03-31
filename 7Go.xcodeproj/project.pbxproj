@@ -21,6 +21,7 @@
 		DEB6D761A75430B7049C6655 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE4A4D3A64BA090B3C7E981 /* APIClient.swift */; };
 		E83758268E6D3A3AB4CAC179 /* 7GoWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 61F207C16BC6DD1161603A52 /* 7GoWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EB89A5664768942E943B38C0 /* FriendSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DBCC85BA877A778A9B40FD9 /* FriendSearchView.swift */; };
+		ECD7C62361D5617D4DF7C4A8 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0AB2B739FD896AF78254D9A3 /* PrivacyInfo.xcprivacy */; };
 		F002DB99D0E095DA9268B577 /* NotificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32646D5C64C91BAC568615BB /* NotificationView.swift */; };
 		F0EDB2A23E576C5EF57BECEB /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C934BBC22FF42E90BE0BB788 /* LoginView.swift */; };
 		F7B3EA26483A611AA2BA14C4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8E3593F62354DDF1AE6D50 /* ContentView.swift */; };
@@ -51,6 +52,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0AB2B739FD896AF78254D9A3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		0C14AD3A160354C48641BE66 /* UserSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSession.swift; sourceTree = "<group>"; };
 		1746BE38B41DB67D94AB0277 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		192316C439A97966E9B8B3D4 /* 7Go.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = 7Go.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -121,6 +123,7 @@
 			isa = PBXGroup;
 			children = (
 				4AFCFF6DF651EC6F1D96F01E /* Assets.xcassets */,
+				0AB2B739FD896AF78254D9A3 /* PrivacyInfo.xcprivacy */,
 				A9B499C192291BFC84EBB670 /* Sources */,
 			);
 			path = watch;
@@ -250,6 +253,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2311CF350EE0C52E49E9948F /* Assets.xcassets in Resources */,
+				ECD7C62361D5617D4DF7C4A8 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -282,7 +286,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ]; then\n  if [ \"${SERVER_URL}\" = \"https://your-server.example.com\" ]; then\n    echo \"warning: SERVER_URL is still set to placeholder. Update it before shipping.\"\n  fi\nfi\n";
+			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ]; then\n  if [ -z \"${SERVER_URL}\" ]; then\n    echo \"error: SERVER_URL must not be empty for Release.\"\n    exit 1\n  fi\n  case \"${SERVER_URL}\" in\n    https://*) ;;\n    *)\n      echo \"error: Release SERVER_URL must use HTTPS.\"\n      exit 1\n      ;;\n  esac\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -474,7 +478,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SERVER_URL = "https://your-server.example.com";
+				SERVER_URL = "https://api.7go.app";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 6.0;

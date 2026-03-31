@@ -36,36 +36,15 @@ enum APIError: LocalizedError, Sendable {
 
 struct APIClient: Sendable {
     static let shared = APIClient()
+    static var privacyPolicyURL: URL? {
+        resolvedBaseURL().appending(path: "privacy")
+    }
 
     private let baseURL: URL
     private let session: URLSession
 
     private init() {
-        // Info.plist の SERVER_URL を読み取り、未設定時はフォールバック
-        let urlString: String
-        if let plistValue = Bundle.main.object(forInfoDictionaryKey: "SERVER_URL") as? String,
-           !plistValue.isEmpty,
-           plistValue != "$(SERVER_URL)" {
-            urlString = plistValue
-        } else {
-            urlString = "https://api.7go.app"
-        }
-
-        var sanitized = urlString
-#if !DEBUG
-        // Release ビルドでは HTTPS を強制
-        if sanitized.hasPrefix("http://") {
-            sanitized = sanitized.replacingOccurrences(of: "http://", with: "https://")
-        }
-        if !sanitized.hasPrefix("https://") {
-            sanitized = "https://" + sanitized
-        }
-#endif
-
-        guard let url = URL(string: sanitized) else {
-            fatalError("SERVER_URL が不正です: \(sanitized)")
-        }
-        self.baseURL = url
+        self.baseURL = Self.resolvedBaseURL()
 
         // タイムアウト 15 秒
         let config = URLSessionConfiguration.default
@@ -114,6 +93,11 @@ struct APIClient: Sendable {
         let _: EmptyResponse = try await delete(url: url, token: token)
     }
 
+    func deleteAccount(token: String) async throws {
+        let url = baseURL.appending(path: "account")
+        let _: EmptyResponse = try await delete(url: url, token: token)
+    }
+
     // MARK: - Signal
 
     func sendSignal(to friendId: String, token: String) async throws {
@@ -124,6 +108,32 @@ struct APIClient: Sendable {
     // MARK: - Private Helpers
 
     private struct EmptyResponse: Decodable {}
+
+    private static func resolvedBaseURL() -> URL {
+        let urlString: String
+        if let plistValue = Bundle.main.object(forInfoDictionaryKey: "SERVER_URL") as? String,
+           !plistValue.isEmpty,
+           plistValue != "$(SERVER_URL)" {
+            urlString = plistValue
+        } else {
+            urlString = "https://api.7go.app"
+        }
+
+        var sanitized = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+#if !DEBUG
+        if sanitized.hasPrefix("http://") {
+            sanitized = sanitized.replacingOccurrences(of: "http://", with: "https://")
+        }
+        if !sanitized.hasPrefix("https://") {
+            sanitized = "https://" + sanitized
+        }
+#endif
+
+        guard let url = URL(string: sanitized) else {
+            fatalError("SERVER_URL が不正です: \(sanitized)")
+        }
+        return url
+    }
 
     private func get<T: Decodable>(url: URL, token: String) async throws -> T {
         var request = URLRequest(url: url)

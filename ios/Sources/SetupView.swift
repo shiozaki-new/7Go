@@ -2,10 +2,19 @@ import SwiftUI
 
 /// 設定画面
 struct SetupView: View {
+    private enum PendingAction: String, Identifiable {
+        case signOut
+        case deleteAccount
+
+        var id: String { rawValue }
+    }
+
     @Environment(UserSession.self) var session
     @Environment(\.dismiss) var dismiss
     @State private var copied = false
-    @State private var showSignOutAlert = false
+    @State private var pendingAction: PendingAction?
+    @State private var errorMessage: String?
+    @State private var isDeletingAccount = false
 
     private var user: AppUser? { session.currentUser }
     private var topic: String { user?.ntfyTopic ?? "" }
@@ -76,15 +85,17 @@ struct SetupView: View {
                 Section("アプリについて") {
                     LabeledContent("バージョン", value: appVersion)
 
-                    Link(destination: URL(string: "https://example.com/privacy")!) {
-                        Label("プライバシーポリシー", systemImage: "hand.raised")
+                    if let privacyURL = APIClient.privacyPolicyURL {
+                        Link(destination: privacyURL) {
+                            Label("プライバシーポリシー", systemImage: "hand.raised")
+                        }
                     }
                 }
 
-                // MARK: - サインアウト
+                // MARK: - アカウント操作
                 Section {
                     Button(role: .destructive) {
-                        showSignOutAlert = true
+                        pendingAction = .signOut
                     } label: {
                         HStack {
                             Spacer()
@@ -92,6 +103,24 @@ struct SetupView: View {
                             Spacer()
                         }
                     }
+                    .disabled(isDeletingAccount)
+
+                    Button(role: .destructive) {
+                        pendingAction = .deleteAccount
+                    } label: {
+                        HStack {
+                            Spacer()
+                            if isDeletingAccount {
+                                ProgressView()
+                            } else {
+                                Text("アカウントを削除")
+                            }
+                            Spacer()
+                        }
+                    }
+                    .disabled(isDeletingAccount)
+                } footer: {
+                    Text("アカウント削除を実行すると、プロフィール、友達関係、ログイン中のセッションが削除されます。")
                 }
             }
             .navigationTitle("設定")
@@ -99,16 +128,65 @@ struct SetupView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("閉じる") { dismiss() }
+                        .disabled(isDeletingAccount)
                 }
             }
-            .alert("サインアウト", isPresented: $showSignOutAlert) {
-                Button("キャンセル", role: .cancel) {}
-                Button("サインアウト", role: .destructive) {
-                    session.signOut()
-                    dismiss()
+            .alert(item: $pendingAction) { action in
+                switch action {
+                case .signOut:
+                    Alert(
+                        title: Text("サインアウト"),
+                        message: Text("サインアウトしてもよろしいですか？"),
+                        primaryButton: .destructive(Text("サインアウト")) {
+                            session.signOut()
+                            dismiss()
+                        },
+                        secondaryButton: .cancel()
+                    )
+                case .deleteAccount:
+                    Alert(
+                        title: Text("アカウントを削除"),
+                        message: Text("この操作は取り消せません。アカウントと関連データを削除します。"),
+                        primaryButton: .destructive(Text("削除")) {
+                            Task { await deleteAccount() }
+                        },
+                        secondaryButton: .cancel()
+                    )
                 }
+            }
+            .alert("エラー", isPresented: showErrorBinding) {
+                Button("OK", role: .cancel) { errorMessage = nil }
             } message: {
-                Text("サインアウトしてもよろしいですか？")
+                Text(errorMessage ?? "")
+            }
+        }
+    }
+
+    private var showErrorBinding: Binding<Bool> {
+        Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )
+    }
+
+    private func deleteAccount() async {
+        guard let token = user?.sessionToken else {
+            errorMessage = "ログイン情報を確認できませんでした。"
+            return
+        }
+
+        isDeletingAccount = true
+        defer { isDeletingAccount = false }
+
+        do {
+            try await APIClient.shared.deleteAccount(token: token)
+            session.signOut()
+            dismiss()
+        } catch {
+            if let apiError = error as? APIError {
+                errorMessage = apiError.localizedDescription
+            } else {
+                errorMessage = "アカウント削除に失敗しました。時間を置いて再度お試しください。"
             }
         }
     }

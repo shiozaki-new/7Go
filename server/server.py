@@ -8,6 +8,7 @@ import os
 import re
 import sqlite3
 import uuid
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -73,6 +74,8 @@ class Handler(BaseHTTPRequestHandler):
         p = self.path.split("?")[0]
         if p == "/health":
             self.ok({"ok": True})
+        elif p == "/privacy":
+            self.privacy_policy()
         elif p == "/users/search":
             self.search_users()
         elif p == "/friends":
@@ -91,6 +94,10 @@ class Handler(BaseHTTPRequestHandler):
             self.err(404, "Not found")
 
     def do_DELETE(self) -> None:
+        if self.path == "/account":
+            self.delete_account()
+            return
+
         m = re.match(r"^/friends/([^/]+)$", self.path)
         if m:
             self.remove_friend(m.group(1))
@@ -173,7 +180,15 @@ class Handler(BaseHTTPRequestHandler):
         if not fid:
             self.err(400, "friendId required")
             return
+        if fid == me["id"]:
+            self.err(400, "Cannot add yourself")
+            return
         with _conn() as c:
+            # 存在するユーザーか確認
+            target = c.execute("SELECT id FROM users WHERE id = ?", (fid,)).fetchone()
+            if not target:
+                self.err(404, "User not found")
+                return
             try:
                 c.execute("INSERT INTO friends (user_id, friend_id) VALUES (?,?)", (me["id"], fid))
             except sqlite3.IntegrityError:
@@ -192,6 +207,18 @@ class Handler(BaseHTTPRequestHandler):
             c.execute("DELETE FROM friends WHERE user_id = ? AND friend_id = ?", (me["id"], friend_id))
         self.ok({"ok": True})
 
+    def delete_account(self) -> None:
+        me = self.auth()
+        if not me:
+            return
+
+        with _conn() as c:
+            c.execute("DELETE FROM friends WHERE user_id = ? OR friend_id = ?", (me["id"], me["id"]))
+            c.execute("DELETE FROM sessions WHERE user_id = ?", (me["id"],))
+            c.execute("DELETE FROM users WHERE id = ?", (me["id"],))
+
+        self.ok({"deleted": True})
+
     def send_signal(self) -> None:
         me = self.auth()
         if not me:
@@ -201,6 +228,14 @@ class Handler(BaseHTTPRequestHandler):
             self.err(400, "friendId required")
             return
         with _conn() as c:
+            # 友達関係の確認（友達でないユーザーへの送信を防止）
+            is_friend = c.execute(
+                "SELECT 1 FROM friends WHERE user_id = ? AND friend_id = ?",
+                (me["id"], fid),
+            ).fetchone()
+            if not is_friend:
+                self.err(403, "Not a friend")
+                return
             friend = c.execute("SELECT * FROM users WHERE id = ?", (fid,)).fetchone()
         if not friend:
             self.err(404, "Friend not found")
@@ -230,6 +265,107 @@ class Handler(BaseHTTPRequestHandler):
             self.err(401, "Unauthorized")
         return me
 
+    def privacy_policy(self) -> None:
+        updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        html = f"""<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>7Go Privacy Policy</title>
+  <style>
+    :root {{
+      color-scheme: light;
+      --bg: #f7f7f2;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #0f766e;
+      --border: #d1d5db;
+    }}
+    body {{
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }}
+    main {{
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }}
+    .card {{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
+    }}
+    h1, h2 {{
+      line-height: 1.25;
+    }}
+    h1 {{
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 32px;
+    }}
+    h2 {{
+      margin-top: 28px;
+      margin-bottom: 8px;
+      font-size: 20px;
+    }}
+    p, li {{
+      font-size: 16px;
+    }}
+    .meta {{
+      color: var(--muted);
+      margin-bottom: 24px;
+    }}
+    a {{
+      color: var(--accent);
+    }}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="card">
+      <h1>7Go プライバシーポリシー</h1>
+      <p class="meta">最終更新日: {updated_at}</p>
+      <p>7Go は、ユーザー同士でシグナルを送り合うために必要な最小限の情報のみを取り扱います。</p>
+
+      <h2>取得する情報</h2>
+      <ul>
+        <li>Sign in with Apple で受け取る識別子</li>
+        <li>表示名</li>
+        <li>ログイン状態を維持するためのセッショントークン</li>
+        <li>通知受信用に発行される ntfy トピック</li>
+        <li>友達追加によって作成される友達関係データ</li>
+      </ul>
+
+      <h2>利用目的</h2>
+      <ul>
+        <li>アカウント作成とログイン状態の維持</li>
+        <li>友達検索、友達追加、友達一覧の表示</li>
+        <li>指定した相手への通知シグナル送信</li>
+        <li>不正利用や障害対応のための最小限の運用</li>
+      </ul>
+
+      <h2>第三者サービス</h2>
+      <p>7Go は通知配信に <a href="https://ntfy.sh" rel="noreferrer">ntfy</a> を利用しています。通知本文やトピック名は、通知配信のため ntfy に送信されます。</p>
+
+      <h2>保存と削除</h2>
+      <p>アカウント情報は、サービス提供に必要な期間保存されます。アプリ内の「設定」からアカウント削除を実行すると、プロフィール、友達関係、サーバー上のセッション情報を削除します。</p>
+
+      <h2>お問い合わせ</h2>
+      <p>サポート窓口は App Store の掲載情報をご確認ください。</p>
+    </div>
+  </main>
+</body>
+</html>
+"""
+        self._html(200, html)
+
     def json_body(self) -> dict[str, Any]:
         n = int(self.headers.get("Content-Length", 0))
         return json.loads(self.rfile.read(n)) if n > 0 else {}
@@ -246,6 +382,14 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))
         self._cors()
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _html(self, code: int, body: str) -> None:
+        data = body.encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
 

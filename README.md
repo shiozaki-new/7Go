@@ -1,4 +1,4 @@
-# PulsePing — Apple Watch 振動通知アプリ
+# 7Go — Apple Watch 振動通知アプリ
 
 友達のボタンを押すと、相手の Apple Watch が振動するアプリ。
 コンビニ休憩の誘い合いなど、シンプルな "サイン" 送信ユースケースを想定。
@@ -8,7 +8,7 @@
 ## アーキテクチャ
 
 ```
-[送信者 iPhone PulsePing アプリ]
+[送信者 iPhone 7Go アプリ]
   → HTTPS POST /signal
 [Python バックエンド]
   → ntfy トピックへ publish
@@ -25,22 +25,34 @@
 ## フォルダ構成
 
 ```
-apple-watch-signal-prototype/
-├── PulsePing.xcodeproj      # Xcode プロジェクト (xcodegen 生成)
+7Go/
+├── 7Go.xcodeproj           # Xcode プロジェクト (xcodegen 生成)
 ├── project.yml              # XcodeGen 設定ソース
-├── ios/Sources/             # iPhone 送信アプリ
-│   ├── PulsePingApp.swift
-│   ├── ContentView.swift    # UI + ViewModel
-│   ├── SignalClient.swift   # API クライアント
-│   ├── Contact.swift        # Contact モデル
-│   └── Info.plist           # xcodegen 生成 (ATS 設定含む)
-├── watch/Sources/           # Apple Watch 受信アプリ
-│   ├── ReceiverWatchApp.swift
-│   ├── ReceiverDebugView.swift
-│   └── Info.plist           # xcodegen 生成
+├── ios/
+│   ├── Sources/
+│   │   ├── SevenGoApp.swift     # アプリエントリポイント
+│   │   ├── LoginView.swift      # ログイン画面
+│   │   ├── HomeView.swift       # 友達一覧・シグナル送信
+│   │   ├── FriendSearchView.swift # 友達検索
+│   │   ├── SetupView.swift      # 設定画面
+│   │   ├── UserSession.swift    # 認証セッション管理
+│   │   ├── APIClient.swift      # API クライアント
+│   │   └── Info.plist
+│   ├── 7Go.entitlements         # Release用 (Sign in with Apple)
+│   ├── 7GoDebug.entitlements    # Debug用 (空)
+│   ├── PrivacyInfo.xcprivacy    # プライバシーマニフェスト
+│   └── Assets.xcassets/
+├── watch/
+│   ├── Sources/
+│   │   ├── ReceiverWatchApp.swift   # Watch アプリ + 通知デリゲート
+│   │   ├── ContentView.swift        # Watch メイン画面
+│   │   ├── NotificationView.swift   # 通知表示 UI
+│   │   ├── NotificationPayload.swift # 通知パース
+│   │   └── Info.plist
+│   ├── PrivacyInfo.xcprivacy
+│   └── Assets.xcassets/
 └── server/
-    ├── server.py            # Python バックエンド
-    └── contacts.json        # 受信者ディレクトリ
+    └── server.py            # Python バックエンド (SQLite + ntfy)
 ```
 
 ---
@@ -105,15 +117,15 @@ ipconfig getifaddr en0
 
 ### ビルド手順
 
-1. `PulsePing.xcodeproj` を開く
+1. `7Go.xcodeproj` を開く
 
 2. **Team 設定** (実機ビルド時のみ必要)
-   - `PulsePing` ターゲット → Signing & Capabilities → Team を設定
-   - `PulseReceiverWatch` ターゲット → Signing & Capabilities → Team を設定
+   - `7Go` ターゲット → Signing & Capabilities → Team を設定
+   - `7GoWatch` ターゲット → Signing & Capabilities → Team を設定
    - Bundle Identifier が他と衝突する場合は変更する (例: `com.yourname.pulseping`)
 
 3. **iPhone アプリをビルド**
-   - スキーム: `PulsePing`
+   - スキーム: `7Go`
    - Run Destination: 自分の iPhone または iPhone シミュレータ
    - ▶ Run
 
@@ -122,7 +134,7 @@ ipconfig getifaddr en0
    - 例: `http://192.168.1.10:8787`
 
 5. **Watch アプリをビルド** (Watch 通知テスト時)
-   - スキーム: `PulseReceiverWatch`
+   - スキーム: `7GoWatch`
    - Run Destination: Apple Watch
    - ▶ Run
 
@@ -139,7 +151,7 @@ ipconfig getifaddr en0
 ### シミュレータで確認
 
 1. `server.py` を起動 (`python3 server/server.py`)
-2. iPhone シミュレータで `PulsePing` を起動
+2. iPhone シミュレータで `7Go` を起動
 3. 連絡先を選んで "Send Tap" をタップ
 4. ステータス欄に `Signal sent to ...` が表示されれば成功
 
@@ -152,7 +164,7 @@ ipconfig getifaddr en0
 
 ### Watch アプリのローカル振動テスト
 
-- Watch に `PulseReceiverWatch` をインストール
+- Watch に `7GoWatch` をインストール
 - アプリを**前面**に表示した状態で "Play Local Haptic" ボタンをタップ
 - 振動が発生すれば Watch 側のセットアップは正常
 
@@ -217,6 +229,6 @@ ipconfig getifaddr en0
 ## XcodeGen でプロジェクトを再生成する場合
 
 ```bash
-cd apple-watch-signal-prototype
+cd 7Go
 xcodegen generate
 ```
