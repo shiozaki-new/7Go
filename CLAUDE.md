@@ -31,40 +31,35 @@ xcodebuild -scheme 7GoWatch -destination 'generic/platform=watchOS' build
 - **Bundle ID (iOS)**: com.macminim4pro.sevengo
 - **Bundle ID (Watch)**: com.macminim4pro.sevengo.watchkitapp
 - **証明書**: Apple Development: skstudio8004430@gmail.com (7D3R5VYL4J)
-- **アカウント種別**: Personal Team（無料）
+- **アカウント種別**: Apple Developer Program（有料・加入済み）
 
 ## 現在の未解決問題
 
-### 1. ログインが動かない
-**原因**: 2つの認証方法どちらも失敗する状態。
-- **Sign in with Apple**: Personal Team（無料）では `com.apple.developer.applesignin` エンタイトルメントが使えない。有料 Apple Developer Program（年12,800円）が必要。
-- **ローカルデバッグログイン**: サーバー（`http://192.168.1.7:8787`）に接続できないため失敗。
-
-**対応方針（どちらかを選択）:**
-
-#### 方針A: サーバーをクラウドにデプロイ（推奨）
-- `server/server.py` を Render / Railway / fly.io 等にデプロイ
-- `project.yml` の `SERVER_URL` をデプロイ先URLに変更
-- ログインは「ローカルデバッグで入る」ボタンで機能する（サーバーにさえ繋がれば動く）
-- Sign in with Apple は有料アカウント取得後に有効化
-
-#### 方針B: macOS ファイアウォール設定変更
-- システム設定 → ネットワーク → ファイアウォール → オプション → 「すべての受信接続をブロック」をオフ
-- `python3 server/server.py` でローカルサーバー起動
-- iPhoneとMacが同じWi-Fiにいれば `http://192.168.1.7:8787` で接続可能
-
-### 2. 友達への配布
-**現状**: Personal Team ではTestFlight配布不可。
+### 1. サーバーのクラウドデプロイ
+**現状**: `server/server.py` がまだクラウドにデプロイされていない。
 **対応**:
-- 有料 Apple Developer Program に加入
-- Sign in with Apple エンタイトルメントを Debug entitlements にも追加
-- TestFlight で配布
+- `render.yaml` を使って Render.com にデプロイ
+- デプロイ後、`project.yml` の `SERVER_URL` をデプロイ先URLに書き換え
+- `xcodegen generate` を再実行
 
-### 3. SERVER_URL がローカルIP固定
-**現状**: `project.yml` の Debug設定が `http://192.168.1.7:8787` にハードコード。
-**対応**: クラウドデプロイ後、HTTPS URLに書き換える。変更後は `xcodegen generate` を再実行。
+### 2. App Store 提出
+**現状**: コード準備完了。提出は手動で行う必要あり。
+**手順**:
+1. サーバーをデプロイし SERVER_URL を更新
+2. Xcode で Archive → App Store Connect にアップロード
+3. App Store Connect でメタデータ・スクリーンショットを登録
+4. Review に提出
 
-## 完了済み修正（2026-03-31）
+## 完了済み修正
+
+### 2026-04-01
+- [x] Apple Developer Program 加入完了
+- [x] Debug entitlements に Sign in with Apple を追加
+- [x] サーバーのクラウドデプロイ準備（Dockerfile, render.yaml）
+- [x] DB パスの環境変数対応（DB_PATH）
+- [x] App Store メタデータ作成（docs/appstore-metadata.md）
+
+### 2026-03-31
 - [x] `xcode-select` を Xcode に切り替え（watchOSビルド不可 → 解消）
 - [x] `DEVELOPMENT_TEAM` を project.yml に追加（署名エラー → 解消）
 - [x] Debug/Release で entitlements を分離（Personal Team対応）
@@ -76,5 +71,5 @@ xcodebuild -scheme 7GoWatch -destination 'generic/platform=watchOS' build
 
 ## 重要な注意事項
 - `7Go.xcodeproj` は XcodeGen の生成物。**直接編集しない**。`project.yml` を編集して `xcodegen generate` を実行。
-- `ios/7GoDebug.entitlements` は空（Personal Team用）。`ios/7Go.entitlements` は Release用（Sign in with Apple + APNs）。
+- `ios/7GoDebug.entitlements` と `ios/7Go.entitlements` の両方に Sign in with Apple が設定済み。
 - サーバーは `0.0.0.0:8787` でリッスンするが、macOS ファイアウォールが「すべての受信接続をブロック」状態のため外部からアクセス不可。

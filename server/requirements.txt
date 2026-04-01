@@ -1,0 +1,2 @@
+# 7Go server uses only Python standard library.
+# This file exists for deployment platforms that require it.
