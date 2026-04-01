@@ -15,7 +15,7 @@ from typing import Any
 from urllib import error as urlerror, parse as urlparse, request as urlrequest
 
 ROOT = Path(__file__).resolve().parent
-DB   = ROOT / "7go.db"
+DB   = Path(os.environ.get("DB_PATH", str(ROOT / "7go.db")))
 NTFY = os.environ.get("NTFY_BASE", "https://ntfy.sh").rstrip("/")
 HOST = os.environ.get("SIGNAL_HOST", "0.0.0.0")
 PORT = int(os.environ.get("SIGNAL_PORT", "8787"))

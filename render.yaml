@@ -1,0 +1,19 @@
+# Render.com Blueprint – deploy with "New > Blueprint" and point to this repo
+services:
+  - type: web
+    name: 7go-server
+    runtime: python
+    rootDir: server
+    buildCommand: echo "No build needed"
+    startCommand: python3 server.py
+    envVars:
+      - key: SIGNAL_PORT
+        value: "8787"
+      - key: NTFY_BASE
+        value: https://ntfy.sh
+      - key: DB_PATH
+        value: /data/7go.db
+    disk:
+      name: 7go-data
+      mountPath: /data
+      sizeGB: 1
