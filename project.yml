@@ -18,9 +18,9 @@ settings:
     DEVELOPMENT_TEAM: M878XBQ25U
   configs:
     Debug:
-      SERVER_URL: "http://192.168.1.7:8787"
+      SERVER_URL: "https://sevengo.onrender.com"
     Release:
-      SERVER_URL: "https://api.7go.app"
+      SERVER_URL: "https://sevengo.onrender.com"
 
 targets:
   7Go:
@@ -120,7 +120,7 @@ schemes:
       config: Debug
       environmentVariables:
         - variable: SERVER_URL
-          value: "http://192.168.1.7:8787"
+          value: "https://sevengo.onrender.com"
           isEnabled: true
     archive:
       config: Release
