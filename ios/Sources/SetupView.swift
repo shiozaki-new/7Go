@@ -11,13 +11,11 @@ struct SetupView: View {
 
     @Environment(UserSession.self) var session
     @Environment(\.dismiss) var dismiss
-    @State private var copied = false
     @State private var pendingAction: PendingAction?
     @State private var errorMessage: String?
     @State private var isDeletingAccount = false
 
     private var user: AppUser? { session.currentUser }
-    private var topic: String { user?.ntfyTopic ?? "" }
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "-"
@@ -39,46 +37,6 @@ struct SetupView: View {
                             .foregroundStyle(.secondary)
                             .textSelection(.enabled)
                     }
-                }
-
-                // MARK: - 通知設定
-                Section {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("ntfy トピック")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(topic)
-                            .font(.system(.body, design: .monospaced))
-                            .textSelection(.enabled)
-                    }
-                    .padding(.vertical, 2)
-
-                    Button {
-                        UIPasteboard.general.string = topic
-                        copied = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            copied = false
-                        }
-                    } label: {
-                        Label(
-                            copied ? "コピーしました" : "トピックをコピー",
-                            systemImage: copied ? "checkmark" : "doc.on.doc"
-                        )
-                    }
-
-                    if let ntfyURL = URL(string: "ntfy://\(topic)") {
-                        Link(destination: ntfyURL) {
-                            Label("ntfy アプリで開く", systemImage: "arrow.up.right.square")
-                        }
-                    }
-
-                    Link(destination: URL(string: "https://apps.apple.com/app/ntfy/id1625396347")!) {
-                        Label("ntfy を App Store で見る", systemImage: "arrow.down.app")
-                    }
-                } header: {
-                    Text("通知設定")
-                } footer: {
-                    Text("通知を受け取るには ntfy アプリでこのトピックを購読してください。")
                 }
 
                 // MARK: - アプリについて

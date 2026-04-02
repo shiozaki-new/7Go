@@ -7,6 +7,13 @@ struct Friend: Identifiable, Codable, Sendable {
     let displayName: String
 }
 
+struct AppUser: Codable, Sendable {
+    let userId: String
+    let displayName: String
+    let sessionToken: String
+    let ntfyTopic: String
+}
+
 // MARK: - Error Types
 
 enum APIError: LocalizedError, Sendable {
@@ -19,34 +26,50 @@ enum APIError: LocalizedError, Sendable {
     var errorDescription: String? {
         switch self {
         case .networkError:
-            return "ネットワーク接続に問題があります。通信環境を確認してください。"
+            return "ネットワーク接続に問題があります。"
         case .serverError(let code, _):
-            return "サーバーエラーが発生しました（コード: \(code)）。しばらくしてから再度お試しください。"
+            return "サーバーエラー（コード: \(code)）"
         case .decodingError:
-            return "サーバーからの応答を処理できませんでした。アプリを最新版に更新してください。"
+            return "サーバー応答の処理に失敗しました。"
         case .unauthorized:
-            return "認証の有効期限が切れました。再度ログインしてください。"
+            return "認証切れ。再ログインしてください。"
         case .notFound:
-            return "指定されたリソースが見つかりませんでした。"
+            return "リソースが見つかりません。"
         }
     }
 }
 
 // MARK: - API Client
 
-struct APIClient: Sendable {
-    static let shared = APIClient()
-    static var privacyPolicyURL: URL? {
-        resolvedBaseURL().appending(path: "privacy")
-    }
+struct WatchAPIClient: Sendable {
+    static let shared = WatchAPIClient()
 
     private let baseURL: URL
     private let session: URLSession
 
     private init() {
-        self.baseURL = Self.resolvedBaseURL()
+        let urlString: String
+        if let plistValue = Bundle.main.object(forInfoDictionaryKey: "SERVER_URL") as? String,
+           !plistValue.isEmpty,
+           plistValue != "$(SERVER_URL)" {
+            urlString = plistValue
+        } else {
+            urlString = "https://api.7go.app"
+        }
 
-        // タイムアウト 15 秒
+        var sanitized = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        if sanitized.hasPrefix("http://") {
+            sanitized = sanitized.replacingOccurrences(of: "http://", with: "https://")
+        }
+        if !sanitized.hasPrefix("https://") {
+            sanitized = "https://" + sanitized
+        }
+
+        guard let url = URL(string: sanitized) else {
+            fatalError("SERVER_URL が不正です: \(sanitized)")
+        }
+        self.baseURL = url
+
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 15
         config.timeoutIntervalForResource = 30
@@ -70,32 +93,8 @@ struct APIClient: Sendable {
 
     // MARK: - Friends
 
-    func searchUsers(query: String, token: String) async throws -> [Friend] {
-        var components = URLComponents(url: baseURL.appending(path: "users/search"), resolvingAgainstBaseURL: false)!
-        components.queryItems = [URLQueryItem(name: "q", value: query)]
-        guard let url = components.url else {
-            throw APIError.networkError(underlying: "検索URLの生成に失敗しました")
-        }
-        return try await get(url: url, token: token)
-    }
-
     func getFriends(token: String) async throws -> [Friend] {
         try await get(url: baseURL.appending(path: "friends"), token: token)
-    }
-
-    func addFriend(friendId: String, token: String) async throws {
-        struct Req: Encodable { let friendId: String }
-        let _: EmptyResponse = try await post("friends/add", body: Req(friendId: friendId), token: token)
-    }
-
-    func removeFriend(friendId: String, token: String) async throws {
-        let url = baseURL.appending(path: "friends/\(friendId)")
-        let _: EmptyResponse = try await delete(url: url, token: token)
-    }
-
-    func deleteAccount(token: String) async throws {
-        let url = baseURL.appending(path: "account")
-        let _: EmptyResponse = try await delete(url: url, token: token)
     }
 
     // MARK: - Signal
@@ -105,35 +104,9 @@ struct APIClient: Sendable {
         let _: EmptyResponse = try await post("signal", body: Req(friendId: friendId), token: token)
     }
 
-    // MARK: - Private Helpers
+    // MARK: - Private
 
     private struct EmptyResponse: Decodable {}
-
-    private static func resolvedBaseURL() -> URL {
-        let urlString: String
-        if let plistValue = Bundle.main.object(forInfoDictionaryKey: "SERVER_URL") as? String,
-           !plistValue.isEmpty,
-           plistValue != "$(SERVER_URL)" {
-            urlString = plistValue
-        } else {
-            urlString = "https://api.7go.app"
-        }
-
-        var sanitized = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-#if !DEBUG
-        if sanitized.hasPrefix("http://") {
-            sanitized = sanitized.replacingOccurrences(of: "http://", with: "https://")
-        }
-        if !sanitized.hasPrefix("https://") {
-            sanitized = "https://" + sanitized
-        }
-#endif
-
-        guard let url = URL(string: sanitized) else {
-            fatalError("SERVER_URL が不正です: \(sanitized)")
-        }
-        return url
-    }
 
     private func get<T: Decodable>(url: URL, token: String) async throws -> T {
         var request = URLRequest(url: url)
@@ -154,14 +127,6 @@ struct APIClient: Sendable {
         return try await perform(request)
     }
 
-    private func delete<T: Decodable>(url: URL, token: String) async throws -> T {
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        return try await perform(request)
-    }
-
-    /// 共通のリクエスト実行・レスポンス検証・デコード処理（502/503 は自動リトライ）
     private func perform<T: Decodable>(_ request: URLRequest) async throws -> T {
         let maxRetries = 3
         var lastError: Error?
@@ -187,7 +152,6 @@ struct APIClient: Sendable {
                 throw APIError.networkError(underlying: "HTTPレスポンスを取得できませんでした")
             }
 
-            // サーバー起動中（Render無料プランのコールドスタート）はリトライ
             if [502, 503].contains(httpResponse.statusCode) && attempt < maxRetries - 1 {
                 lastError = APIError.serverError(statusCode: httpResponse.statusCode, message: "サーバー起動中...")
                 continue

@@ -1,175 +1,202 @@
 import SwiftUI
-import UserNotifications
+import AuthenticationServices
 import WatchKit
 
-// MARK: - Signal Store
+// MARK: - Content View (Root)
 
-@MainActor
-@Observable
-final class SignalStore {
-    static let shared = SignalStore()
+struct ContentView: View {
+    @Environment(WatchUserSession.self) var session
+    @Environment(SignalStore.self) var store
 
-    var lastSenderName: String?
-    var lastReceivedDate: Date?
-    var notificationPermission: UNAuthorizationStatus = .notDetermined
-    var showPulse: Bool = false
-    private var lastNotificationIdentifier: String?
-
-    /// 通知許可状態に基づく接続判定
-    var isConnected: Bool {
-        notificationPermission == .authorized || notificationPermission == .provisional
-    }
-
-    var statusText: String {
-        switch notificationPermission {
-        case .authorized, .provisional:
-            return "通知待機中"
-        case .denied:
-            return "通知未許可"
-        case .notDetermined:
-            return "通知未設定"
-        @unknown default:
-            return "状態不明"
+    var body: some View {
+        if session.isLoggedIn {
+            FriendsView()
+        } else {
+            WatchLoginView()
         }
-    }
-
-    var statusColor: Color {
-        switch notificationPermission {
-        case .authorized, .provisional:
-            return .green
-        case .denied:
-            return .red
-        case .notDetermined:
-            return .orange
-        @unknown default:
-            return .gray
-        }
-    }
-
-    func recordSignal(from sender: String, notificationID: String? = nil) {
-        if let notificationID, notificationID == lastNotificationIdentifier {
-            return
-        }
-        lastNotificationIdentifier = notificationID
-        lastSenderName = sender
-        lastReceivedDate = Date()
-
-        showPulse = true
-        WKInterfaceDevice.current().play(.notification)
-
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            showPulse = false
-        }
-    }
-
-    /// 通知許可状態を更新する
-    func refreshNotificationStatus() async {
-        let settings = await UNUserNotificationCenter.current().notificationSettings()
-        notificationPermission = settings.authorizationStatus
-    }
-
-    var lastReceivedText: String {
-        guard let name = lastSenderName, let date = lastReceivedDate else {
-            return "まだ通知はありません"
-        }
-        let formatter = RelativeDateTimeFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.unitsStyle = .abbreviated
-        let relative = formatter.localizedString(for: date, relativeTo: Date())
-        return "\(name) - \(relative)"
     }
 }
 
-// MARK: - Content View
+// MARK: - Watch Login View
 
-struct ContentView: View {
-    @Environment(SignalStore.self) var store
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var animatePulse = false
+struct WatchLoginView: View {
+    @Environment(WatchUserSession.self) var session
 
     var body: some View {
-        VStack(spacing: 12) {
-            Text("7Go")
-                .font(.system(.title2, design: .rounded, weight: .bold))
-                .foregroundStyle(.tint)
+        ScrollView {
+            VStack(spacing: 16) {
+                Image(systemName: "hand.tap.fill")
+                    .font(.system(size: 36))
+                    .foregroundStyle(.tint)
 
-            Spacer()
+                Text("7Go")
+                    .font(.system(.title3, design: .rounded, weight: .bold))
 
-            ZStack {
-                if animatePulse {
-                    Circle()
-                        .stroke(Color.accentColor.opacity(0.3), lineWidth: 2)
-                        .frame(width: 80, height: 80)
-                        .scaleEffect(animatePulse ? 1.6 : 1.0)
-                        .opacity(animatePulse ? 0 : 0.8)
-
-                    Circle()
-                        .stroke(Color.accentColor.opacity(0.2), lineWidth: 1.5)
-                        .frame(width: 80, height: 80)
-                        .scaleEffect(animatePulse ? 2.0 : 1.0)
-                        .opacity(animatePulse ? 0 : 0.6)
+                SignInWithAppleButton(.signIn) { request in
+                    request.requestedScopes = [.fullName]
+                } onCompletion: { result in
+                    Task { await session.handleSignIn(result: result) }
                 }
+                .frame(height: 44)
 
-                Circle()
-                    .fill(Color.accentColor.opacity(0.15))
-                    .frame(width: 72, height: 72)
-                    .overlay {
-                        Image(systemName: "hand.tap.fill")
-                            .font(.system(size: 30))
-                            .foregroundStyle(.tint)
-                            .symbolEffect(.pulse, options: .repeating,
-                                          isActive: animatePulse)
+                if let error = session.loginError {
+                    Text(error)
+                        .font(.caption2)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding()
+        }
+    }
+}
+
+// MARK: - Friends View
+
+struct FriendsView: View {
+    @Environment(WatchUserSession.self) var session
+    @Environment(SignalStore.self) var store
+    @State private var friends: [Friend] = []
+    @State private var isLoading = true
+    @State private var sendingToId: String?
+    @State private var statusMessage: String?
+    @State private var statusIsError = false
+
+    private var token: String {
+        session.currentUser?.sessionToken ?? ""
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if isLoading {
+                    ProgressView("読み込み中...")
+                } else if friends.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "person.2.slash")
+                            .font(.title2)
+                            .foregroundStyle(.secondary)
+                        Text("友達がいません")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("iPhoneで友達を追加してね")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
                     }
-                    .scaleEffect(animatePulse ? 1.1 : 1.0)
+                } else {
+                    List {
+                        // 最後の通知セクション
+                        if store.lastSenderName != nil {
+                            Section {
+                                HStack(spacing: 6) {
+                                    Circle()
+                                        .fill(store.statusColor)
+                                        .frame(width: 6, height: 6)
+                                    Text(store.lastReceivedText)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+
+                        // 友達リスト
+                        Section("友達") {
+                            ForEach(friends) { friend in
+                                Button {
+                                    Task { await send(to: friend) }
+                                } label: {
+                                    HStack {
+                                        Text(String(friend.displayName.prefix(1)))
+                                            .font(.system(.caption, design: .rounded, weight: .bold))
+                                            .foregroundStyle(.white)
+                                            .frame(width: 28, height: 28)
+                                            .background(Circle().fill(Color.accentColor))
+
+                                        Text(friend.displayName)
+                                            .font(.caption)
+                                            .lineLimit(1)
+
+                                        Spacer()
+
+                                        if sendingToId == friend.id {
+                                            ProgressView()
+                                        } else {
+                                            Image(systemName: "hand.tap.fill")
+                                                .foregroundStyle(.tint)
+                                                .font(.caption)
+                                        }
+                                    }
+                                }
+                                .disabled(sendingToId != nil)
+                            }
+                        }
+                    }
+                }
             }
-            .animation(.easeInOut(duration: 1.2), value: animatePulse)
-
-            Spacer()
-
-            VStack(spacing: 4) {
-                Text("最後の通知")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-
-                Text(store.lastReceivedText)
-                    .font(.caption)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
+            .navigationTitle("7Go")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        session.signOut()
+                    } label: {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .font(.caption2)
+                    }
+                }
             }
-
-            HStack(spacing: 4) {
-                Circle()
-                    .fill(store.statusColor)
-                    .frame(width: 6, height: 6)
-                Text(store.statusText)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
+            .overlay(alignment: .bottom) {
+                if let msg = statusMessage {
+                    Text(msg)
+                        .font(.caption2)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule().fill(statusIsError ? Color.red.opacity(0.8) : Color.green.opacity(0.8))
+                        )
+                        .foregroundStyle(.white)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .padding(.bottom, 4)
+                }
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
         .task {
-            await store.refreshNotificationStatus()
+            await loadFriends()
         }
-        .onChange(of: store.showPulse) { _, newValue in
-            if newValue {
-                withAnimation(.easeInOut(duration: 1.2)) {
-                    animatePulse = true
-                }
-                Task {
-                    try? await Task.sleep(for: .seconds(1.5))
-                    withAnimation {
-                        animatePulse = false
-                    }
-                }
-            }
+    }
+
+    private func loadFriends() async {
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            friends = try await WatchAPIClient.shared.getFriends(token: token)
+        } catch {
+            showStatus(error.localizedDescription, isError: true)
         }
-        .onChange(of: scenePhase) { _, newValue in
-            guard newValue == .active else { return }
-            Task {
-                await store.refreshNotificationStatus()
+    }
+
+    private func send(to friend: Friend) async {
+        guard sendingToId == nil else { return }
+        sendingToId = friend.id
+        defer { sendingToId = nil }
+        do {
+            try await WatchAPIClient.shared.sendSignal(to: friend.id, token: token)
+            WKInterfaceDevice.current().play(.success)
+            showStatus("\(friend.displayName) に送信！", isError: false)
+        } catch {
+            WKInterfaceDevice.current().play(.failure)
+            showStatus(error.localizedDescription, isError: true)
+        }
+    }
+
+    private func showStatus(_ message: String, isError: Bool) {
+        withAnimation {
+            statusMessage = message
+            statusIsError = isError
+        }
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            withAnimation {
+                statusMessage = nil
             }
         }
     }
@@ -177,5 +204,6 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environment(WatchUserSession.shared)
         .environment(SignalStore.shared)
 }

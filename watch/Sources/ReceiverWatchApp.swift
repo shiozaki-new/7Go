@@ -9,6 +9,7 @@ struct SevenGoWatchApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(WatchUserSession.shared)
                 .environment(SignalStore.shared)
         }
 
@@ -22,6 +23,7 @@ struct SevenGoWatchApp: App {
 final class AppDelegate: NSObject, WKApplicationDelegate {
     func applicationDidFinishLaunching() {
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+        WatchUserSession.shared.restoreSession()
         Task {
             await SignalStore.shared.refreshNotificationStatus()
         }
