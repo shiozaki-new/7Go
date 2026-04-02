@@ -43,7 +43,7 @@ targets:
       properties:
         CFBundleDisplayName: 7Go
         CFBundleShortVersionString: "1.1.0"
-        CFBundleVersion: "3"
+        CFBundleVersion: "7"
         ITSAppUsesNonExemptEncryption: false
         UIApplicationSupportsIndirectInputEvents: true
         UILaunchScreen: {}
@@ -96,13 +96,13 @@ targets:
       - path: watch/PrivacyInfo.xcprivacy
     dependencies:
       - sdk: UserNotifications.framework
-      - sdk: AuthenticationServices.framework
+      - sdk: WatchConnectivity.framework
     info:
       path: watch/Sources/Info.plist
       properties:
         CFBundleDisplayName: 7Go
         CFBundleShortVersionString: "1.1.0"
-        CFBundleVersion: "2"
+        CFBundleVersion: "7"
         ITSAppUsesNonExemptEncryption: false
         WKApplication: true
         WKCompanionAppBundleIdentifier: com.macminim4pro.sevengo

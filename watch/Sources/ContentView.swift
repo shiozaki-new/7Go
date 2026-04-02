@@ -1,5 +1,4 @@
 import SwiftUI
-import AuthenticationServices
 import WatchKit
 
 // MARK: - Content View (Root)
@@ -12,42 +11,32 @@ struct ContentView: View {
         if session.isLoggedIn {
             FriendsView()
         } else {
-            WatchLoginView()
+            WatchWaitingView()
         }
     }
 }
 
-// MARK: - Watch Login View
+// MARK: - Waiting for iPhone Sync
 
-struct WatchLoginView: View {
-    @Environment(WatchUserSession.self) var session
-
+struct WatchWaitingView: View {
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                Image(systemName: "hand.tap.fill")
-                    .font(.system(size: 36))
-                    .foregroundStyle(.tint)
+        VStack(spacing: 12) {
+            Image(systemName: "hand.tap.fill")
+                .font(.system(size: 36))
+                .foregroundStyle(.tint)
 
-                Text("7Go")
-                    .font(.system(.title3, design: .rounded, weight: .bold))
+            Text("7Go")
+                .font(.system(.title3, design: .rounded, weight: .bold))
 
-                SignInWithAppleButton(.signIn) { request in
-                    request.requestedScopes = [.fullName]
-                } onCompletion: { result in
-                    Task { await session.handleSignIn(result: result) }
-                }
-                .frame(height: 44)
+            Text("iPhoneでログインすると\n自動で同期されます")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
 
-                if let error = session.loginError {
-                    Text(error)
-                        .font(.caption2)
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.center)
-                }
-            }
-            .padding()
+            ProgressView()
+                .padding(.top, 4)
         }
+        .padding()
     }
 }
 

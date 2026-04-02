@@ -79,6 +79,7 @@ final class UserSession {
     func signOut() {
         currentUser = nil
         UserDefaults.standard.removeObject(forKey: "currentUser")
+        PhoneSessionSync.shared.clearSession()
     }
 
     private func persist(_ user: AppUser) {
@@ -86,5 +87,6 @@ final class UserSession {
         if let data = try? JSONEncoder().encode(user) {
             UserDefaults.standard.set(data, forKey: "currentUser")
         }
+        PhoneSessionSync.shared.sendSession(user: user)
     }
 }

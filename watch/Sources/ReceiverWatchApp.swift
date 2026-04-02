@@ -23,7 +23,7 @@ struct SevenGoWatchApp: App {
 final class AppDelegate: NSObject, WKApplicationDelegate {
     func applicationDidFinishLaunching() {
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
-        WatchUserSession.shared.restoreSession()
+        WatchUserSession.shared.activate()
         Task {
             await SignalStore.shared.refreshNotificationStatus()
         }

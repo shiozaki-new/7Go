@@ -15,7 +15,11 @@ struct SevenGoApp: App {
             }
             .environment(session)
             .task {
+                PhoneSessionSync.shared.activate()
                 await session.restoreSession()
+                if let user = session.currentUser {
+                    PhoneSessionSync.shared.sendSession(user: user)
+                }
             }
         }
     }
