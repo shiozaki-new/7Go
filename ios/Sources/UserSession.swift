@@ -17,7 +17,12 @@ final class UserSession {
     var currentUser: AppUser?
     var loginError: String?
 
+    /// Apple Sign In 後、ニックネーム設定待ちの状態
+    var pendingAppleID: String?
+    var suggestedName: String?
+
     var isLoggedIn: Bool { currentUser != nil }
+    var needsNickname: Bool { pendingAppleID != nil }
 
     func restoreSession() async {
         guard
@@ -37,13 +42,10 @@ final class UserSession {
             let family = credential.fullName?.familyName ?? ""
             let name   = [given, family].filter { !$0.isEmpty }.joined(separator: " ")
 
-            do {
-                let user = try await APIClient.shared.register(appleID: appleID, displayName: name)
-                persist(user)
-                loginError = nil
-            } catch {
-                loginError = "ログイン失敗: \(error.localizedDescription)"
-            }
+            // ニックネーム設定画面に遷移
+            pendingAppleID = appleID
+            suggestedName = name.isEmpty ? nil : name
+            loginError = nil
 
         case .failure(let error):
             if (error as? ASAuthorizationError)?.code == .canceled { return }
@@ -51,19 +53,26 @@ final class UserSession {
         }
     }
 
-#if DEBUG
-    func handleLocalDebugSignIn() async {
-        let appleID = debugAppleID()
-        let displayName = UserDefaults.standard.string(forKey: "debugDisplayName")
-            ?? UIDevice.current.name
-
+    /// ニックネーム決定後にサーバー登録
+    func completeRegistration(displayName: String) async {
+        guard let appleID = pendingAppleID else { return }
         do {
             let user = try await APIClient.shared.register(appleID: appleID, displayName: displayName)
             persist(user)
+            pendingAppleID = nil
+            suggestedName = nil
             loginError = nil
         } catch {
-            loginError = "デバッグログイン失敗: \(error.localizedDescription)"
+            loginError = "登録に失敗しました: \(error.localizedDescription)"
         }
+    }
+
+#if DEBUG
+    func handleLocalDebugSignIn() async {
+        let appleID = debugAppleID()
+        pendingAppleID = appleID
+        suggestedName = UIDevice.current.name
+        loginError = nil
     }
 
     private func debugAppleID() -> String {
