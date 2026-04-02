@@ -42,7 +42,7 @@ targets:
       path: ios/Sources/Info.plist
       properties:
         CFBundleDisplayName: 7Go
-        CFBundleShortVersionString: "1.0.0"
+        CFBundleShortVersionString: "1.1.0"
         CFBundleVersion: "3"
         ITSAppUsesNonExemptEncryption: false
         UIApplicationSupportsIndirectInputEvents: true
@@ -101,7 +101,7 @@ targets:
       path: watch/Sources/Info.plist
       properties:
         CFBundleDisplayName: 7Go
-        CFBundleShortVersionString: "1.0.0"
+        CFBundleShortVersionString: "1.1.0"
         CFBundleVersion: "2"
         ITSAppUsesNonExemptEncryption: false
         WKApplication: true
