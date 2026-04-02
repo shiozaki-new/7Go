@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""7Go backend – SQLite + Sign-in-with-Apple + polling-based signals."""
+"""7Go backend – Turso (libSQL HTTP) + Sign-in-with-Apple + polling-based signals."""
 
 from __future__ import annotations
 
@@ -13,49 +13,155 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 from urllib import parse as urlparse
+from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent
-DB   = Path(os.environ.get("DB_PATH", str(ROOT / "7go.db")))
 HOST = os.environ.get("SIGNAL_HOST", "0.0.0.0")
 PORT = int(os.environ.get("SIGNAL_PORT", "8787"))
+
+# Turso (libSQL) connection settings
+TURSO_URL   = os.environ.get("TURSO_URL", "")      # libsql://xxx.turso.io
+TURSO_TOKEN = os.environ.get("TURSO_TOKEN", "")
+
+
+# ──────────────────────────────────────────────
+# Turso HTTP API wrapper
+# ──────────────────────────────────────────────
+
+class TursoRow:
+    """sqlite3.Row-compatible wrapper for Turso HTTP API results."""
+    def __init__(self, columns: list[str], values: list):
+        self._data = dict(zip(columns, values))
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+    def keys(self):
+        return self._data.keys()
+
+
+class TursoCursor:
+    """Minimal cursor returned by TursoConnection.execute()."""
+    def __init__(self, columns: list[str], rows: list[list]):
+        self._columns = columns
+        self._rows = [TursoRow(columns, r) for r in rows]
+
+    def fetchone(self):
+        return self._rows[0] if self._rows else None
+
+    def fetchall(self):
+        return self._rows
+
+
+class TursoConnection:
+    """sqlite3.Connection-compatible wrapper using Turso HTTP API."""
+
+    def __init__(self, base_url: str, token: str):
+        self._url = base_url.rstrip("/") + "/v2/pipeline"
+        self._token = token
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        pass
+
+    def _request(self, statements: list[dict]) -> list[dict]:
+        body = {"requests": [
+            {"type": "execute", "stmt": s} for s in statements
+        ] + [{"type": "close"}]}
+        req = Request(self._url, data=json.dumps(body).encode(),
+                      headers={"Authorization": f"Bearer {self._token}",
+                               "Content-Type": "application/json"})
+        with urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read())["results"]
+
+    def execute(self, sql: str, params=None) -> TursoCursor:
+        stmt: dict[str, Any] = {"sql": sql}
+        if params:
+            if isinstance(params, (list, tuple)):
+                stmt["args"] = [{"type": _turso_type(v), "value": str(v) if v is not None else None} for v in params]
+            else:
+                stmt["named_args"] = [{"name": k, "type": _turso_type(v), "value": str(v)} for k, v in params.items()]
+        results = self._request([stmt])
+        r = results[0]
+        if r["type"] == "error":
+            msg = r["error"].get("message", "")
+            if "UNIQUE constraint failed" in msg or "PRIMARY KEY constraint failed" in msg:
+                raise sqlite3.IntegrityError(msg)
+            raise RuntimeError(msg)
+        resp = r["response"]["result"]
+        cols = [c["name"] for c in resp.get("cols", [])]
+        rows = [[cell["value"] for cell in row] for row in resp.get("rows", [])]
+        return TursoCursor(cols, rows)
+
+    def executescript(self, script: str):
+        stmts = [s.strip() for s in script.split(";") if s.strip()]
+        if not stmts:
+            return
+        stmt_objs = [{"sql": s} for s in stmts]
+        results = self._request(stmt_objs)
+        for r in results:
+            if r["type"] == "error":
+                raise RuntimeError(r["error"].get("message", ""))
+
+
+def _turso_type(v) -> str:
+    if isinstance(v, int):
+        return "integer"
+    if isinstance(v, float):
+        return "float"
+    if v is None:
+        return "null"
+    return "text"
 
 
 # ──────────────────────────────────────────────
 # DB
 # ──────────────────────────────────────────────
 
+_INIT_STATEMENTS = [
+    """CREATE TABLE IF NOT EXISTS users (
+        id           TEXT PRIMARY KEY,
+        apple_id     TEXT UNIQUE NOT NULL,
+        display_name TEXT NOT NULL,
+        created_at   TEXT DEFAULT (datetime('now'))
+    )""",
+    """CREATE TABLE IF NOT EXISTS sessions (
+        token      TEXT PRIMARY KEY,
+        user_id    TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now'))
+    )""",
+    """CREATE TABLE IF NOT EXISTS friends (
+        user_id   TEXT NOT NULL,
+        friend_id TEXT NOT NULL,
+        PRIMARY KEY (user_id, friend_id)
+    )""",
+    """CREATE TABLE IF NOT EXISTS signals (
+        id          TEXT PRIMARY KEY,
+        sender_id   TEXT NOT NULL,
+        receiver_id TEXT NOT NULL,
+        sender_name TEXT NOT NULL,
+        created_at  TEXT DEFAULT (datetime('now')),
+        read         INTEGER DEFAULT 0
+    )""",
+]
+
+
 def init_db() -> None:
     with _conn() as c:
-        c.executescript("""
-            CREATE TABLE IF NOT EXISTS users (
-                id           TEXT PRIMARY KEY,
-                apple_id     TEXT UNIQUE NOT NULL,
-                display_name TEXT NOT NULL,
-                created_at   TEXT DEFAULT (datetime('now'))
-            );
-            CREATE TABLE IF NOT EXISTS sessions (
-                token      TEXT PRIMARY KEY,
-                user_id    TEXT NOT NULL,
-                created_at TEXT DEFAULT (datetime('now'))
-            );
-            CREATE TABLE IF NOT EXISTS friends (
-                user_id   TEXT NOT NULL,
-                friend_id TEXT NOT NULL,
-                PRIMARY KEY (user_id, friend_id)
-            );
-            CREATE TABLE IF NOT EXISTS signals (
-                id          TEXT PRIMARY KEY,
-                sender_id   TEXT NOT NULL,
-                receiver_id TEXT NOT NULL,
-                sender_name TEXT NOT NULL,
-                created_at  TEXT DEFAULT (datetime('now')),
-                read         INTEGER DEFAULT 0
-            );
-        """)
+        if isinstance(c, TursoConnection):
+            for stmt in _INIT_STATEMENTS:
+                c.execute(stmt)
+        else:
+            c.executescript(";".join(_INIT_STATEMENTS))
 
 
-def _conn() -> sqlite3.Connection:
-    c = sqlite3.connect(DB)
+def _conn():
+    if TURSO_URL:
+        http_url = TURSO_URL.replace("libsql://", "https://")
+        return TursoConnection(http_url, TURSO_TOKEN)
+    c = sqlite3.connect(str(ROOT / "7go.db"))
     c.row_factory = sqlite3.Row
     return c
 

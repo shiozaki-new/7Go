@@ -9,9 +9,7 @@ services:
     envVars:
       - key: SIGNAL_PORT
         value: "8787"
-      - key: DB_PATH
-        value: /data/7go.db
-    disk:
-      name: 7go-data
-      mountPath: /data
-      sizeGB: 1
+      - key: TURSO_URL
+        sync: false
+      - key: TURSO_TOKEN
+        sync: false
