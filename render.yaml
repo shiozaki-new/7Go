@@ -9,8 +9,6 @@ services:
     envVars:
       - key: SIGNAL_PORT
         value: "8787"
-      - key: NTFY_BASE
-        value: https://ntfy.sh
       - key: DB_PATH
         value: /data/7go.db
     disk:
