@@ -50,15 +50,13 @@ final class WatchUserSession: NSObject {
         guard
             let userId = context["userId"] as? String,
             let displayName = context["displayName"] as? String,
-            let sessionToken = context["sessionToken"] as? String,
-            let ntfyTopic = context["ntfyTopic"] as? String
+            let sessionToken = context["sessionToken"] as? String
         else { return }
 
         let user = AppUser(
             userId: userId,
             displayName: displayName,
-            sessionToken: sessionToken,
-            ntfyTopic: ntfyTopic
+            sessionToken: sessionToken
         )
         persist(user)
     }

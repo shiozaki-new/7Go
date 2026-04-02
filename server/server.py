@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""7Go backend – SQLite + Sign-in-with-Apple + ntfy notifications."""
+"""7Go backend – SQLite + Sign-in-with-Apple + polling-based signals."""
 
 from __future__ import annotations
 
@@ -12,11 +12,10 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib import error as urlerror, parse as urlparse, request as urlrequest
+from urllib import parse as urlparse
 
 ROOT = Path(__file__).resolve().parent
 DB   = Path(os.environ.get("DB_PATH", str(ROOT / "7go.db")))
-NTFY = os.environ.get("NTFY_BASE", "https://ntfy.sh").rstrip("/")
 HOST = os.environ.get("SIGNAL_HOST", "0.0.0.0")
 PORT = int(os.environ.get("SIGNAL_PORT", "8787"))
 
@@ -32,7 +31,6 @@ def init_db() -> None:
                 id           TEXT PRIMARY KEY,
                 apple_id     TEXT UNIQUE NOT NULL,
                 display_name TEXT NOT NULL,
-                ntfy_topic   TEXT UNIQUE NOT NULL,
                 created_at   TEXT DEFAULT (datetime('now'))
             );
             CREATE TABLE IF NOT EXISTS sessions (
@@ -44,6 +42,14 @@ def init_db() -> None:
                 user_id   TEXT NOT NULL,
                 friend_id TEXT NOT NULL,
                 PRIMARY KEY (user_id, friend_id)
+            );
+            CREATE TABLE IF NOT EXISTS signals (
+                id          TEXT PRIMARY KEY,
+                sender_id   TEXT NOT NULL,
+                receiver_id TEXT NOT NULL,
+                sender_name TEXT NOT NULL,
+                created_at  TEXT DEFAULT (datetime('now')),
+                read         INTEGER DEFAULT 0
             );
         """)
 
@@ -68,7 +74,7 @@ def user_by_token(token: str) -> dict | None:
 # ──────────────────────────────────────────────
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "7Go/2.0"
+    server_version = "7Go/3.0"
 
     def do_GET(self) -> None:
         p = self.path.split("?")[0]
@@ -80,6 +86,8 @@ class Handler(BaseHTTPRequestHandler):
             self.search_users()
         elif p == "/friends":
             self.get_friends()
+        elif p == "/signals/pending":
+            self.get_pending_signals()
         else:
             self.err(404, "Not found")
 
@@ -123,15 +131,13 @@ class Handler(BaseHTTPRequestHandler):
         with _conn() as c:
             row = c.execute("SELECT * FROM users WHERE apple_id = ?", (apple_id,)).fetchone()
             if row is None:
-                uid   = str(uuid.uuid4())
-                topic = f"7go-{uuid.uuid4().hex[:20]}"
+                uid = str(uuid.uuid4())
                 c.execute(
-                    "INSERT INTO users (id, apple_id, display_name, ntfy_topic) VALUES (?,?,?,?)",
-                    (uid, apple_id, name or "名無し", topic),
+                    "INSERT INTO users (id, apple_id, display_name) VALUES (?,?,?)",
+                    (uid, apple_id, name or "名無し"),
                 )
                 row = c.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone()
             elif name:
-                # Apple は初回サインインのみ名前を返す。提供された場合のみ更新
                 c.execute("UPDATE users SET display_name = ? WHERE id = ?", (name, row["id"]))
 
             token = str(uuid.uuid4())
@@ -141,7 +147,6 @@ class Handler(BaseHTTPRequestHandler):
             "sessionToken": token,
             "userId":       row["id"],
             "displayName":  name if name else row["display_name"],
-            "ntfyTopic":    row["ntfy_topic"],
         })
 
     def search_users(self) -> None:
@@ -184,7 +189,6 @@ class Handler(BaseHTTPRequestHandler):
             self.err(400, "Cannot add yourself")
             return
         with _conn() as c:
-            # 存在するユーザーか確認
             target = c.execute("SELECT id FROM users WHERE id = ?", (fid,)).fetchone()
             if not target:
                 self.err(404, "User not found")
@@ -213,6 +217,7 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         with _conn() as c:
+            c.execute("DELETE FROM signals WHERE sender_id = ? OR receiver_id = ?", (me["id"], me["id"]))
             c.execute("DELETE FROM friends WHERE user_id = ? OR friend_id = ?", (me["id"], me["id"]))
             c.execute("DELETE FROM sessions WHERE user_id = ?", (me["id"],))
             c.execute("DELETE FROM users WHERE id = ?", (me["id"],))
@@ -228,7 +233,6 @@ class Handler(BaseHTTPRequestHandler):
             self.err(400, "friendId required")
             return
         with _conn() as c:
-            # 友達関係の確認（友達でないユーザーへの送信を防止）
             is_friend = c.execute(
                 "SELECT 1 FROM friends WHERE user_id = ? AND friend_id = ?",
                 (me["id"], fid),
@@ -237,24 +241,39 @@ class Handler(BaseHTTPRequestHandler):
                 self.err(403, "Not a friend")
                 return
             friend = c.execute("SELECT * FROM users WHERE id = ?", (fid,)).fetchone()
-        if not friend:
-            self.err(404, "Friend not found")
-            return
+            if not friend:
+                self.err(404, "Friend not found")
+                return
 
-        try:
-            _publish_ntfy(
-                topic=friend["ntfy_topic"],
-                sender=me["display_name"],
-                message=f"{me['display_name']} がコンビニ行こうって言ってるよ ☕",
+            signal_id = str(uuid.uuid4())
+            c.execute(
+                "INSERT INTO signals (id, sender_id, receiver_id, sender_name) VALUES (?,?,?,?)",
+                (signal_id, me["id"], fid, me["display_name"]),
             )
-        except urlerror.HTTPError as e:
-            self.err(502, f"ntfy error: {e.code}")
-            return
-        except urlerror.URLError as e:
-            self.err(502, f"ntfy unreachable: {e.reason}")
-            return
 
         self.ok({"delivered": True, "detail": f"Signal sent to {friend['display_name']}."})
+
+    def get_pending_signals(self) -> None:
+        me = self.auth()
+        if not me:
+            return
+        with _conn() as c:
+            rows = c.execute(
+                """SELECT id, sender_id, sender_name, created_at FROM signals
+                   WHERE receiver_id = ? AND read = 0
+                   ORDER BY created_at DESC LIMIT 50""",
+                (me["id"],),
+            ).fetchall()
+            if rows:
+                ids = [r["id"] for r in rows]
+                placeholders = ",".join("?" * len(ids))
+                c.execute(f"UPDATE signals SET read = 1 WHERE id IN ({placeholders})", ids)
+        self.ok([{
+            "id": r["id"],
+            "senderId": r["sender_id"],
+            "senderName": r["sender_name"],
+            "createdAt": r["created_at"],
+        } for r in rows])
 
     # ── helpers ──
 
@@ -339,23 +358,20 @@ class Handler(BaseHTTPRequestHandler):
         <li>Sign in with Apple で受け取る識別子</li>
         <li>表示名</li>
         <li>ログイン状態を維持するためのセッショントークン</li>
-        <li>通知受信用に発行される ntfy トピック</li>
         <li>友達追加によって作成される友達関係データ</li>
+        <li>送受信したシグナル情報</li>
       </ul>
 
       <h2>利用目的</h2>
       <ul>
         <li>アカウント作成とログイン状態の維持</li>
         <li>友達検索、友達追加、友達一覧の表示</li>
-        <li>指定した相手への通知シグナル送信</li>
+        <li>指定した相手へのシグナル送信</li>
         <li>不正利用や障害対応のための最小限の運用</li>
       </ul>
 
-      <h2>第三者サービス</h2>
-      <p>7Go は通知配信に <a href="https://ntfy.sh" rel="noreferrer">ntfy</a> を利用しています。通知本文やトピック名は、通知配信のため ntfy に送信されます。</p>
-
       <h2>保存と削除</h2>
-      <p>アカウント情報は、サービス提供に必要な期間保存されます。アプリ内の「設定」からアカウント削除を実行すると、プロフィール、友達関係、サーバー上のセッション情報を削除します。</p>
+      <p>アカウント情報は、サービス提供に必要な期間保存されます。アプリ内の「設定」からアカウント削除を実行すると、プロフィール、友達関係、シグナル履歴、サーバー上のセッション情報を削除します。</p>
 
       <h2>お問い合わせ</h2>
       <p>サポート窓口は App Store の掲載情報をご確認ください。</p>
@@ -403,26 +419,6 @@ class Handler(BaseHTTPRequestHandler):
 
 
 # ──────────────────────────────────────────────
-# ntfy
-# ──────────────────────────────────────────────
-
-def _publish_ntfy(topic: str, sender: str, message: str) -> None:
-    req = urlrequest.Request(
-        f"{NTFY}/{topic}",
-        data=message.encode(),
-        headers={
-            "Content-Type": "text/plain; charset=utf-8",
-            "Title":    f"7Go — {sender}",
-            "Priority": "urgent",
-            "Tags":     "wave",
-        },
-        method="POST",
-    )
-    with urlrequest.urlopen(req, timeout=10):
-        pass
-
-
-# ──────────────────────────────────────────────
 # main
 # ──────────────────────────────────────────────
 
@@ -430,7 +426,6 @@ def main() -> None:
     init_db()
     srv = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"7Go server   http://{HOST}:{PORT}")
-    print(f"ntfy base    {NTFY}")
     srv.serve_forever()
 
 

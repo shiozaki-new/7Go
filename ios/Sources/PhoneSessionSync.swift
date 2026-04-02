@@ -17,7 +17,6 @@ final class PhoneSessionSync: NSObject, WCSessionDelegate, @unchecked Sendable {
             "userId": user.userId,
             "displayName": user.displayName,
             "sessionToken": user.sessionToken,
-            "ntfyTopic": user.ntfyTopic,
         ]
         try? WCSession.default.updateApplicationContext(context)
     }

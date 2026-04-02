@@ -150,6 +150,7 @@ struct FriendsView: View {
         }
         .task {
             await loadFriends()
+            await pollForSignals()
         }
     }
 
@@ -160,6 +161,23 @@ struct FriendsView: View {
             friends = try await WatchAPIClient.shared.getFriends(token: token)
         } catch {
             showStatus(error.localizedDescription, isError: true)
+        }
+    }
+
+    /// サーバーから新着シグナルを15秒ごとにチェック
+    private func pollForSignals() async {
+        while !Task.isCancelled {
+            do {
+                let signals = try await WatchAPIClient.shared.getPendingSignals(token: token)
+                for signal in signals {
+                    await MainActor.run {
+                        store.recordSignal(from: signal.senderName)
+                    }
+                }
+            } catch {
+                // ポーリングエラーは無視
+            }
+            try? await Task.sleep(for: .seconds(15))
         }
     }
 

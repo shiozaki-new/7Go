@@ -57,15 +57,20 @@ struct APIClient: Sendable {
 
     func register(appleID: String, displayName: String) async throws -> AppUser {
         struct Req: Encodable { let appleId: String; let displayName: String }
-        struct Res: Decodable { let sessionToken: String; let userId: String; let displayName: String; let ntfyTopic: String }
+        struct Res: Decodable { let sessionToken: String; let userId: String; let displayName: String }
 
         let res: Res = try await post("register", body: Req(appleId: appleID, displayName: displayName))
         return AppUser(
             userId: res.userId,
             displayName: res.displayName,
-            sessionToken: res.sessionToken,
-            ntfyTopic: res.ntfyTopic
+            sessionToken: res.sessionToken
         )
+    }
+
+    // MARK: - Signals
+
+    func getPendingSignals(token: String) async throws -> [PendingSignal] {
+        try await get(url: baseURL.appending(path: "signals/pending"), token: token)
     }
 
     // MARK: - Friends

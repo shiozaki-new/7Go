@@ -8,7 +8,13 @@ struct AppUser: Codable {
     let userId: String
     let displayName: String
     let sessionToken: String
-    let ntfyTopic: String
+}
+
+struct PendingSignal: Identifiable, Codable, Sendable {
+    let id: String
+    let senderId: String
+    let senderName: String
+    let createdAt: String
 }
 
 @MainActor
