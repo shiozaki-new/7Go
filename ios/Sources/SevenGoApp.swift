@@ -9,8 +9,6 @@ struct SevenGoApp: App {
             Group {
                 if session.isLoggedIn {
                     HomeView()
-                } else if session.needsNickname {
-                    NicknameSetupView()
                 } else {
                     LoginView()
                 }

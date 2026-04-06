@@ -53,7 +53,7 @@ struct LoginView: View {
             // MARK: - Sign In & Footer
             VStack(spacing: 16) {
                 SignInWithAppleButton(.signIn) { request in
-                    request.requestedScopes = [.fullName]
+                    request.requestedScopes = [.fullName, .email]
                 } onCompletion: { result in
                     Task { await session.handleSignIn(result: result) }
                 }

@@ -41,17 +41,23 @@ final class UserSession {
     func handleSignIn(result: Result<ASAuthorization, Error>) async {
         switch result {
         case .success(let auth):
-            guard let credential = auth.credential as? ASAuthorizationAppleIDCredential else { return }
+            guard let credential = auth.credential as? ASAuthorizationAppleIDCredential else {
+                loginError = "Apple ID認証情報を取得できませんでした。"
+                return
+            }
 
-            let appleID = credential.user
-            let given  = credential.fullName?.givenName  ?? ""
-            let family = credential.fullName?.familyName ?? ""
-            let name   = [given, family].filter { !$0.isEmpty }.joined(separator: " ")
-
-            // ニックネーム設定画面に遷移
-            pendingAppleID = appleID
-            suggestedName = name.isEmpty ? nil : name
-            loginError = nil
+            do {
+                let user = try await APIClient.shared.register(
+                    appleID: credential.user,
+                    displayName: resolvedDisplayName(from: credential)
+                )
+                persist(user)
+                pendingAppleID = nil
+                suggestedName = nil
+                loginError = nil
+            } catch {
+                loginError = "ログイン失敗: \(error.localizedDescription)"
+            }
 
         case .failure(let error):
             if (error as? ASAuthorizationError)?.code == .canceled { return }
@@ -76,9 +82,18 @@ final class UserSession {
 #if DEBUG
     func handleLocalDebugSignIn() async {
         let appleID = debugAppleID()
-        pendingAppleID = appleID
-        suggestedName = UIDevice.current.name
-        loginError = nil
+        let displayName = UserDefaults.standard.string(forKey: "debugDisplayName")
+            ?? UIDevice.current.name
+
+        do {
+            let user = try await APIClient.shared.register(appleID: appleID, displayName: displayName)
+            persist(user)
+            pendingAppleID = nil
+            suggestedName = nil
+            loginError = nil
+        } catch {
+            loginError = "デバッグログイン失敗: \(error.localizedDescription)"
+        }
     }
 
     private func debugAppleID() -> String {
@@ -93,6 +108,8 @@ final class UserSession {
 
     func signOut() {
         currentUser = nil
+        pendingAppleID = nil
+        suggestedName = nil
         UserDefaults.standard.removeObject(forKey: "currentUser")
         PhoneSessionSync.shared.clearSession()
     }
@@ -103,5 +120,22 @@ final class UserSession {
             UserDefaults.standard.set(data, forKey: "currentUser")
         }
         PhoneSessionSync.shared.sendSession(user: user)
+    }
+
+    private func resolvedDisplayName(from credential: ASAuthorizationAppleIDCredential) -> String {
+        let given = credential.fullName?.givenName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let family = credential.fullName?.familyName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let name = [given, family].filter { !$0.isEmpty }.joined(separator: " ")
+        if !name.isEmpty {
+            return String(name.prefix(20))
+        }
+
+        if let email = credential.email,
+           let localPart = email.split(separator: "@").first,
+           !localPart.isEmpty {
+            return String(localPart.prefix(20))
+        }
+
+        return "7Go-\(credential.user.suffix(6))"
     }
 }

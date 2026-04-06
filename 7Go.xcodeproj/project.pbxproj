@@ -7,18 +7,24 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1A9E5636957ECA8243F089CE /* WatchUserSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE40B63C2406AAAC553F2FDF /* WatchUserSession.swift */; };
 		2311CF350EE0C52E49E9948F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4AFCFF6DF651EC6F1D96F01E /* Assets.xcassets */; };
 		3550EF39B8FB40FAB0359C3D /* ReceiverWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7914659091634654D9D9B84B /* ReceiverWatchApp.swift */; };
 		3A579C9B564A6F5D46EEE91C /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 599AAFBD8679E212B3D24147 /* UserNotifications.framework */; };
 		4E0DD02A419E25FBAC91E77F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D19F417374CCA872E03758C3 /* PrivacyInfo.xcprivacy */; };
+		6E6EFB22C1812616D1957030 /* SignalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800F05E1D17874C1502F11F /* SignalStore.swift */; };
+		73997C16E317147515F8AE47 /* PhoneSessionSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D382633A37DC03AAFB38C497 /* PhoneSessionSync.swift */; };
 		7C7058BE6B5416568FF82128 /* SevenGoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA1226849D481B7D03933D4 /* SevenGoApp.swift */; };
 		7D3B0687581AD9171C777DDE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1746BE38B41DB67D94AB0277 /* Assets.xcassets */; };
+		87E01D446A984897600F34A5 /* WatchAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B0ACADF788410285AC3AEB /* WatchAPIClient.swift */; };
 		9B3111A7C189D649F804FAF9 /* UserSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C14AD3A160354C48641BE66 /* UserSession.swift */; };
+		BE50BC28F23C62E2442F5CBD /* NicknameSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0EAB6C38739DD7820A55A0 /* NicknameSetupView.swift */; };
 		C84622E7E552E810A8C59655 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D15E1179276099067276D63 /* SetupView.swift */; };
 		C9B4623D336A0BBBD5457674 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3CE5F4509F0A7E7770DEAC6 /* HomeView.swift */; };
 		D21320EA16F632D1B9A2EF3D /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 599AAFBD8679E212B3D24147 /* UserNotifications.framework */; };
 		DE38D3BB3D17D0DB7EB4911C /* NotificationPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0A8B893A7369628927A5AEF /* NotificationPayload.swift */; };
 		DEB6D761A75430B7049C6655 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE4A4D3A64BA090B3C7E981 /* APIClient.swift */; };
+		E7C0B6E6E41BA40C4B3E23B7 /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D63421EB4220A01C01CE5D50 /* WatchConnectivity.framework */; };
 		E83758268E6D3A3AB4CAC179 /* 7GoWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 61F207C16BC6DD1161603A52 /* 7GoWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EB89A5664768942E943B38C0 /* FriendSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DBCC85BA877A778A9B40FD9 /* FriendSearchView.swift */; };
 		ECD7C62361D5617D4DF7C4A8 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0AB2B739FD896AF78254D9A3 /* PrivacyInfo.xcprivacy */; };
@@ -57,6 +63,7 @@
 		1746BE38B41DB67D94AB0277 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		192316C439A97966E9B8B3D4 /* 7Go.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = 7Go.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1AA1226849D481B7D03933D4 /* SevenGoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SevenGoApp.swift; sourceTree = "<group>"; };
+		22B0ACADF788410285AC3AEB /* WatchAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAPIClient.swift; sourceTree = "<group>"; };
 		32646D5C64C91BAC568615BB /* NotificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationView.swift; sourceTree = "<group>"; };
 		4AFCFF6DF651EC6F1D96F01E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4DBCC85BA877A778A9B40FD9 /* FriendSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendSearchView.swift; sourceTree = "<group>"; };
@@ -66,8 +73,13 @@
 		6DE4A4D3A64BA090B3C7E981 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		7914659091634654D9D9B84B /* ReceiverWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiverWatchApp.swift; sourceTree = "<group>"; };
 		8D8E3593F62354DDF1AE6D50 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B800F05E1D17874C1502F11F /* SignalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalStore.swift; sourceTree = "<group>"; };
+		BA0EAB6C38739DD7820A55A0 /* NicknameSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NicknameSetupView.swift; sourceTree = "<group>"; };
 		C934BBC22FF42E90BE0BB788 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		CE40B63C2406AAAC553F2FDF /* WatchUserSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchUserSession.swift; sourceTree = "<group>"; };
 		D19F417374CCA872E03758C3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		D382633A37DC03AAFB38C497 /* PhoneSessionSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneSessionSync.swift; sourceTree = "<group>"; };
+		D63421EB4220A01C01CE5D50 /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
 		E0A8B893A7369628927A5AEF /* NotificationPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPayload.swift; sourceTree = "<group>"; };
 		F3CE5F4509F0A7E7770DEAC6 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -86,6 +98,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3A579C9B564A6F5D46EEE91C /* UserNotifications.framework in Frameworks */,
+				E7C0B6E6E41BA40C4B3E23B7 /* WatchConnectivity.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -96,6 +109,7 @@
 			isa = PBXGroup;
 			children = (
 				599AAFBD8679E212B3D24147 /* UserNotifications.framework */,
+				D63421EB4220A01C01CE5D50 /* WatchConnectivity.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -136,6 +150,9 @@
 				E0A8B893A7369628927A5AEF /* NotificationPayload.swift */,
 				32646D5C64C91BAC568615BB /* NotificationView.swift */,
 				7914659091634654D9D9B84B /* ReceiverWatchApp.swift */,
+				B800F05E1D17874C1502F11F /* SignalStore.swift */,
+				22B0ACADF788410285AC3AEB /* WatchAPIClient.swift */,
+				CE40B63C2406AAAC553F2FDF /* WatchUserSession.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -157,6 +174,8 @@
 				4DBCC85BA877A778A9B40FD9 /* FriendSearchView.swift */,
 				F3CE5F4509F0A7E7770DEAC6 /* HomeView.swift */,
 				C934BBC22FF42E90BE0BB788 /* LoginView.swift */,
+				BA0EAB6C38739DD7820A55A0 /* NicknameSetupView.swift */,
+				D382633A37DC03AAFB38C497 /* PhoneSessionSync.swift */,
 				6D15E1179276099067276D63 /* SetupView.swift */,
 				1AA1226849D481B7D03933D4 /* SevenGoApp.swift */,
 				0C14AD3A160354C48641BE66 /* UserSession.swift */,
@@ -299,6 +318,8 @@
 				EB89A5664768942E943B38C0 /* FriendSearchView.swift in Sources */,
 				C9B4623D336A0BBBD5457674 /* HomeView.swift in Sources */,
 				F0EDB2A23E576C5EF57BECEB /* LoginView.swift in Sources */,
+				BE50BC28F23C62E2442F5CBD /* NicknameSetupView.swift in Sources */,
+				73997C16E317147515F8AE47 /* PhoneSessionSync.swift in Sources */,
 				C84622E7E552E810A8C59655 /* SetupView.swift in Sources */,
 				7C7058BE6B5416568FF82128 /* SevenGoApp.swift in Sources */,
 				9B3111A7C189D649F804FAF9 /* UserSession.swift in Sources */,
@@ -313,6 +334,9 @@
 				DE38D3BB3D17D0DB7EB4911C /* NotificationPayload.swift in Sources */,
 				F002DB99D0E095DA9268B577 /* NotificationView.swift in Sources */,
 				3550EF39B8FB40FAB0359C3D /* ReceiverWatchApp.swift in Sources */,
+				6E6EFB22C1812616D1957030 /* SignalStore.swift in Sources */,
+				87E01D446A984897600F34A5 /* WatchAPIClient.swift in Sources */,
+				1A9E5636957ECA8243F089CE /* WatchUserSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -331,10 +355,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = watch/7GoWatch.entitlements;
 				INFOPLIST_FILE = watch/Sources/Info.plist;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macminim4pro.sevengo.watchkitapp;
 				PRODUCT_NAME = 7GoWatch;
 				SDKROOT = watchos;
+				SERVER_URL = "$(SERVER_URL)";
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 11.0;
@@ -490,10 +516,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = watch/7GoWatch.entitlements;
 				INFOPLIST_FILE = watch/Sources/Info.plist;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macminim4pro.sevengo.watchkitapp;
 				PRODUCT_NAME = 7GoWatch;
 				SDKROOT = watchos;
+				SERVER_URL = "$(SERVER_URL)";
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 11.0;
