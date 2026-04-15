@@ -1,7 +1,7 @@
 # App Store メタデータ
 
 ## アプリ名
-7Go
+7Go4
 
 ## サブタイトル（30文字以内）
 Apple Watchで友達にバイブを送ろう
@@ -11,7 +11,7 @@ Apple Watchで友達にバイブを送ろう
 - セカンダリ: ライフスタイル
 
 ## 説明文（日本語）
-7Goは、Apple Watch同士で友達にバイブレーション（シグナル）を送り合えるアプリです。
+7Go4は、Apple Watch同士で友達にバイブレーション（シグナル）を送り合えるアプリです。
 
 ワンタップで友達のApple Watchを振動させて、「コンビニ行こう」「そろそろ出よう」をサッと伝えよう。
 
@@ -24,7 +24,7 @@ Apple Watchで友達にバイブを送ろう
 言葉は要らない。バイブだけで伝わる。
 
 ## Description (English)
-7Go lets you send vibration signals between Apple Watches.
+7Go4 lets you send vibration signals between Apple Watches.
 
 With one tap, vibrate your friend's Apple Watch to say "Let's go!" without typing a single word.
 

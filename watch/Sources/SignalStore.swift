@@ -8,6 +8,7 @@ final class SignalStore {
     static let shared = SignalStore()
 
     var lastSenderName: String?
+    var lastEmoji: String?
     var lastReceivedDate: Date?
     var notificationPermission: UNAuthorizationStatus = .notDetermined
     var showPulse: Bool = false
@@ -43,12 +44,13 @@ final class SignalStore {
         }
     }
 
-    func recordSignal(from sender: String, notificationID: String? = nil) {
+    func recordSignal(from sender: String, emoji: String? = nil, notificationID: String? = nil) {
         if let notificationID, notificationID == lastNotificationIdentifier {
             return
         }
         lastNotificationIdentifier = notificationID
         lastSenderName = sender
+        lastEmoji = emoji
         lastReceivedDate = Date()
 
         showPulse = true
@@ -73,6 +75,7 @@ final class SignalStore {
         formatter.locale = Locale(identifier: "ja_JP")
         formatter.unitsStyle = .abbreviated
         let relative = formatter.localizedString(for: date, relativeTo: Date())
-        return "\(name) - \(relative)"
+        let emojiSuffix = lastEmoji.map { " \($0)" } ?? ""
+        return "\(name)\(emojiSuffix) - \(relative)"
     }
 }

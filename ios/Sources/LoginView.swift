@@ -16,10 +16,10 @@ struct LoginView: View {
                     .symbolRenderingMode(.hierarchical)
                     .padding(.bottom, 4)
 
-                Text("7Go")
+                Text("7Go4")
                     .font(.system(size: 56, weight: .bold, design: .rounded))
 
-                Text("Apple Watchで友達にバイブを送ろう")
+                Text("Apple Watchに最短で絵文字を届けよう")
                     .font(.title3)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -31,19 +31,19 @@ struct LoginView: View {
             // MARK: - Feature Bullets
             VStack(spacing: 24) {
                 FeatureRow(
-                    icon: "hand.tap.fill",
-                    title: "ワンタップで通知",
-                    subtitle: "友達のApple Watchを振動させよう"
+                    icon: "applewatch.radiowaves.left.and.right",
+                    title: "最短で振動",
+                    subtitle: "相手のApple Watchをすぐ呼び出す"
                 )
                 FeatureRow(
-                    icon: "person.2.fill",
-                    title: "友達を追加",
-                    subtitle: "Apple IDで簡単につながる"
+                    icon: "number",
+                    title: "6桁コードで接続",
+                    subtitle: "検索なしで相手とすぐつながる"
                 )
                 FeatureRow(
-                    icon: "applewatch",
-                    title: "Apple Watch対応",
-                    subtitle: "手首で感じるリアルタイム通知"
+                    icon: "face.smiling",
+                    title: "9つの絵文字",
+                    subtitle: "ポケベルのように短く伝える"
                 )
             }
             .padding(.horizontal, 32)

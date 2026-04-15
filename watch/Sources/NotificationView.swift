@@ -6,17 +6,20 @@ import WatchKit
 
 final class NotificationController: WKUserNotificationHostingController<NotificationView> {
     var senderName: String = ""
+    var emoji: String = "☕️"
 
     override var body: NotificationView {
-        NotificationView(senderName: senderName)
+        NotificationView(senderName: senderName, emoji: emoji)
     }
 
     override func didReceive(_ notification: UNNotification) {
         senderName = NotificationPayload.senderName(from: notification)
+        emoji = NotificationPayload.emoji(from: notification) ?? "☕️"
 
         Task { @MainActor in
             SignalStore.shared.recordSignal(
                 from: senderName,
+                emoji: emoji,
                 notificationID: notification.request.identifier
             )
         }
@@ -27,17 +30,16 @@ final class NotificationController: WKUserNotificationHostingController<Notifica
 
 struct NotificationView: View {
     let senderName: String
+    let emoji: String
 
     var body: some View {
         VStack(spacing: 12) {
-            Text("7Go")
+            Text("7Go4")
                 .font(.system(.caption, design: .rounded, weight: .bold))
                 .foregroundStyle(.tint)
 
-            Image(systemName: "hand.tap.fill")
-                .font(.title2)
-                .foregroundStyle(.tint)
-                .symbolEffect(.bounce, options: .nonRepeating)
+            Text(emoji)
+                .font(.system(size: 34))
 
             Text(senderName)
                 .font(.headline)
@@ -52,5 +54,5 @@ struct NotificationView: View {
 }
 
 #Preview {
-    NotificationView(senderName: "太郎")
+    NotificationView(senderName: "太郎", emoji: "☕️")
 }

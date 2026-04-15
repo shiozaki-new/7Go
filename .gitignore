@@ -21,3 +21,5 @@ server/__pycache__/
 
 # Credentials / secrets
 .env
+AuthKey_*.p8
+.tmp-asc/

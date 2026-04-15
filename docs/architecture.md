@@ -1,97 +1,115 @@
-# Signal Architecture
+# 7Go4 Architecture
 
-## Short answer
+## Goal
 
-Yes, you can build an app where a sender picks a name and presses one button, and the other person's Apple Watch alerts.
+`7Go4` は、Apple Watch を主役にした `ポケベル型触覚コミュニケーション` を目指す。  
+初版の最重要要件は以下。
 
-The supported way to do that is not "watch to watch" direct signaling.
-The supported path is:
+- 閉じた状態でも、できるだけ最速で Apple Watch を振動させる
+- 送る内容は `振動 + 絵文字1つ`
+- 相手追加は `6桁コード`
+- 初版は `1対1`
+- iPhone / Watch の両方から送信する
 
-- sender app -> your server -> push delivery service -> recipient device -> Apple Watch notification haptic
+## Current MVP
 
-## Prototype path in this repo
+### User flow
 
-The fastest working version is:
+1. iPhone で `Sign in with Apple`
+2. 自分の `6桁コード` を表示
+3. 相手の `6桁コード` を入力して相互接続
+4. 9個の固定絵文字から1つを送信
+5. サーバーがシグナルを保存し、登録済みの Watch / iPhone に APNs を送る
+6. 相手の Apple Watch に `送信者名 + 絵文字` の通知を出す
 
-- sender iPhone app
-- your small HTTPS server
-- `ntfy` topic per recipient
-- recipient iPhone and Apple Watch running the `ntfy` app
+### Fixed emoji set
 
-Flow:
+`🏪 ☕️ 🍽️ 🚻 🏠 🏢 🏫 🤫 🚑`
 
-- sender iPhone app -> `POST /signal`
-- server looks up the target person
-- server publishes to `https://ntfy.sh/<secret-topic>`
-- `ntfy` delivers a notification to the recipient device
-- Apple Watch plays the notification haptic
+## Delivery model
 
-## Production path
+```text
+[Sender iPhone / Watch]
+        |
+        v
+[7Go4 server]
+        |
+        +--> store signal (latest 100 pending)
+        |
+        +--> APNs (priority 10, alert push)
+                |
+                +--> recipient Apple Watch
+                +--> recipient iPhone
+```
 
-The App Store friendly version is:
+### Why this shape
 
-- sender iPhone app -> your backend -> APNs -> recipient iPhone/watch app notification -> system haptic on Apple Watch
+- `WatchConnectivity` は同一ユーザーの iPhone <-> Watch 連携用で、別ユーザー間の運搬路ではない
+- 閉じた状態で相手を呼び出すには、実用上 `APNs` が正道
+- Watch 前面時の拡張として、後から `ライブ振動` を追加する
 
-If the receiver watch app is already active on screen, the watch app can also trigger a local haptic with:
+## Backend responsibilities
 
-- `WKInterfaceDevice.current().play(.notification)`
+### Existing endpoints
 
-Official API link:
+- `POST /register`
+- `GET /friends`
+- `POST /signal`
+- `GET /signals/pending`
+- `DELETE /friends/:id`
+- `DELETE /account`
 
-- `https://developer.apple.com/documentation/watchkit/wkinterfacedevice/play(_:)`
+### New endpoints for 7Go4
 
-## How the signal is really sent
+- `GET /pairing-code`
+- `POST /pair`
+- `POST /devices/register`
 
-The server is the hub.
+### Storage
 
-The sender app should never know how to reach the recipient watch directly.
-Instead, the sender app sends:
+- `users`
+- `sessions`
+- `friends`
+- `pair_codes`
+- `devices`
+- `signals`
 
-- who to notify
-- who sent it
-- optional message metadata
+## App responsibilities
 
-The server then maps that person to a delivery target:
+### iPhone
 
-- prototype: a private `ntfy` topic
-- production: an APNs device token for that user's app
+- Sign in with Apple
+- Push token registration
+- Pair code display / redeem
+- Friend list + emoji send board
+- Watch へのセッション同期
 
-## Why not WatchConnectivity for cross-user signaling
+### Watch
 
-`WatchConnectivity` is only for a person's iPhone app talking to that same person's paired watch app.
-It is not the internet transport between two different users.
+- iPhone からセッション受信
+- Push token registration
+- Friend list + emoji send board
+- 通知受信時の表示とハプティクス
 
-Use it only after the receiving phone already has the signal and you want to mirror state into that user's watch app.
+## Constraints
 
-Apple references:
+### Supported today
 
-- `https://developer.apple.com/documentation/WatchConnectivity/transferring-data-with-watch-connectivity`
-- `https://developer.apple.com/videos/play/wwdc2021/10003/`
+- 閉じた状態での `1送信 = 1通知`
+- 最新100件までの保留
+- Watch / iPhone の両方への push
 
-Apple's WWDC21 Watch Connectivity session describes `applicationContext`, `transferUserInfo`, and `sendMessage` as paired-device transfer tools, and notes that `sendMessage` requires the counterpart app to be reachable.
+### Not guaranteed by the platform
 
-## Apple notification constraints
+- 閉じた状態での完全な連続ライブ振動
+- 相手の集中モードを常に突破すること
+- 1秒未満配信の絶対保証
 
-Apple's notification docs state that local and remote notifications are the supported way to alert people even when the app is not in the foreground, and that remote notifications require your own provider server that sends data to APNs.
+## Next step after MVP
 
-Official sources:
+MVP を実機で安定させた後に、以下を検討する。
 
-- `https://developer.apple.com/documentation/usernotifications/asking-permission-to-use-notifications`
-- `https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/`
-- `https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/HandlingRemoteNotifications.html`
-- `https://developer.apple.com/documentation/usernotifications/pushing-background-updates-to-your-app`
-
-Relevant points from those sources:
-
-- remote notifications are for server-to-device delivery
-- your app must obtain permission for alerts and sounds
-- your app must register with APNs and forward the device token to your server
-- archived Apple docs note that watchOS notifications are forwarded from the paired iPhone to Apple Watch when the iPhone is locked or asleep and the watch is on wrist and unlocked
-
-## Practical inference
-
-This is an inference from the official APIs above:
-
-- a general-purpose "silent remote vibrate another user's Apple Watch at any time" flow is not the standard app model
-- a visible notification is the normal remote delivery path
-- direct haptic playback is local to the watch app code running on the recipient device
+- Watch 前面時の `長押し -> 連続送信`
+- WebSocket などを使った `ライブ振動`
+- 送信遅延の可視化
+- Time Sensitive Notifications の正式対応

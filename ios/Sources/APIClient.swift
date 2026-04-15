@@ -7,6 +7,10 @@ struct Friend: Identifiable, Codable, Sendable {
     let displayName: String
 }
 
+struct PairingCodeResponse: Codable, Sendable {
+    let code: String
+}
+
 // MARK: - Error Types
 
 enum APIError: LocalizedError, Sendable {
@@ -57,7 +61,12 @@ struct APIClient: Sendable {
 
     func register(appleID: String, displayName: String) async throws -> AppUser {
         struct Req: Encodable { let appleId: String; let displayName: String }
-        struct Res: Decodable { let sessionToken: String; let userId: String; let displayName: String }
+        struct Res: Decodable {
+            let sessionToken: String
+            let userId: String
+            let displayName: String
+            let pairingCode: String?
+        }
 
         let res: Res = try await post("register", body: Req(appleId: appleID, displayName: displayName))
         return AppUser(
@@ -88,6 +97,16 @@ struct APIClient: Sendable {
         try await get(url: baseURL.appending(path: "friends"), token: token)
     }
 
+    func getPairingCode(token: String) async throws -> String {
+        let response: PairingCodeResponse = try await get(url: baseURL.appending(path: "pairing-code"), token: token)
+        return response.code
+    }
+
+    func redeemPairingCode(_ code: String, token: String) async throws -> Friend {
+        struct Req: Encodable { let code: String }
+        return try await post("pair", body: Req(code: code), token: token)
+    }
+
     func addFriend(friendId: String, token: String) async throws {
         struct Req: Encodable { let friendId: String }
         let _: EmptyResponse = try await post("friends/add", body: Req(friendId: friendId), token: token)
@@ -105,9 +124,32 @@ struct APIClient: Sendable {
 
     // MARK: - Signal
 
-    func sendSignal(to friendId: String, token: String) async throws {
-        struct Req: Encodable { let friendId: String }
-        let _: EmptyResponse = try await post("signal", body: Req(friendId: friendId), token: token)
+    func sendSignal(to friendId: String, emoji: String, token: String) async throws {
+        struct Req: Encodable {
+            let friendId: String
+            let emoji: String
+        }
+        let _: EmptyResponse = try await post("signal", body: Req(friendId: friendId, emoji: emoji), token: token)
+    }
+
+    func registerDevice(pushToken: String, deviceKind: String, pushTopic: String, token: String) async throws {
+        struct Req: Encodable {
+            let pushToken: String
+            let platform: String
+            let deviceKind: String
+            let pushTopic: String
+        }
+
+        let _: EmptyResponse = try await post(
+            "devices/register",
+            body: Req(
+                pushToken: pushToken,
+                platform: "ios",
+                deviceKind: deviceKind,
+                pushTopic: pushTopic
+            ),
+            token: token
+        )
     }
 
     // MARK: - Private Helpers

@@ -6,12 +6,16 @@ enum NotificationPayload {
         senderName(from: notification.request.content)
     }
 
+    static func emoji(from notification: UNNotification) -> String? {
+        emoji(from: notification.request.content)
+    }
+
     static func senderName(from content: UNNotificationContent) -> String {
         if let senderName = nonEmptyString(content.userInfo["senderName"] as? String) {
             return senderName
         }
 
-        // `ntfy` mirrored notifications do not carry 7Go's custom `userInfo`,
+        // `ntfy` mirrored notifications do not carry 7Go4's custom `userInfo`,
         // so fall back to the title/body until APNs delivers structured payloads.
         if let senderName = senderNameFromTitle(content.title) {
             return senderName
@@ -21,6 +25,16 @@ enum NotificationPayload {
         }
 
         return "不明"
+    }
+
+    static func emoji(from content: UNNotificationContent) -> String? {
+        if let emoji = nonEmptyString(content.userInfo["emoji"] as? String) {
+            return emoji
+        }
+
+        let trimmedBody = content.body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedBody.isEmpty else { return nil }
+        return trimmedBody
     }
 
     private static func senderNameFromTitle(_ title: String) -> String? {

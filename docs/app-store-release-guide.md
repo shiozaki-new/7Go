@@ -1,8 +1,8 @@
-# App Store リリース手順書（7Go）
+# App Store リリース手順書（7Go4）
 
 > **対象**: AI（Claude / Codex）および開発者本人
 > **最終更新**: 2026-04-01
-> **実績**: この手順で 7Go v1.0.0 を審査提出済み
+> **実績**: この手順で 7Go4 v1.0.0 を審査提出済み
 
 ---
 
@@ -90,10 +90,10 @@ xcodegen generate
 ### 全部コマンドで可能
 ```bash
 # 1. Archive 作成
-xcodebuild -scheme 7Go \
+xcodebuild -scheme 7Go4 \
   -destination 'generic/platform=iOS' \
   -configuration Release \
-  -archivePath ./build/7Go.xcarchive \
+  -archivePath ./build/7Go4.xcarchive \
   archive
 
 # 2. ExportOptions.plist 作成
@@ -120,7 +120,7 @@ EOF
 # 3. App Store Connect にアップロード
 #    ⚠️ -allowProvisioningUpdates が必須（プロファイル自動生成）
 xcodebuild -exportArchive \
-  -archivePath ./build/7Go.xcarchive \
+  -archivePath ./build/7Go4.xcarchive \
   -exportOptionsPlist ./build/ExportOptions.plist \
   -exportPath ./build/export \
   -allowProvisioningUpdates
@@ -154,7 +154,7 @@ xcodebuild -exportArchive \
 | 項目 | 値 |
 |------|-----|
 | プラットフォーム | **iOS**（watchOS アプリは iOS に含まれる） |
-| 名前 | `7Go` |
+| 名前 | `7Go4` |
 | プライマリ言語 | **日本語** |
 | バンドルID | `com.macminim4pro.sevengo` を選択 |
 | SKU | `sevengo` |
@@ -216,7 +216,7 @@ xcodebuild -exportArchive \
 ```bash
 # iPhone 6.5インチ（iPhone 16 Pro Max）
 xcrun simctl boot <iPhone16ProMax_UDID>
-xcodebuild -scheme 7Go -destination 'platform=iOS Simulator,id=<UDID>' -configuration Release build
+xcodebuild -scheme 7Go4 -destination 'platform=iOS Simulator,id=<UDID>' -configuration Release build
 xcrun simctl install <UDID> <path_to_app>
 xcrun simctl launch <UDID> com.macminim4pro.sevengo
 sleep 3
@@ -230,7 +230,7 @@ xcrun simctl boot <iPadPro13_UDID>
 
 # Apple Watch
 xcrun simctl boot <WatchSeries11_UDID>
-xcodebuild -scheme 7GoWatch -destination 'platform=watchOS Simulator,id=<UDID>' -configuration Release build
+xcodebuild -scheme 7Go4Watch -destination 'platform=watchOS Simulator,id=<UDID>' -configuration Release build
 xcrun simctl install <UDID> <path_to_watch_app>
 xcrun simctl launch <UDID> com.macminim4pro.sevengo.watchkitapp
 # ⚠️ 初回起動時に通知許可ダイアログが出る
@@ -288,7 +288,7 @@ App Store Connect で全項目が緑になったら:
 
 ---
 
-## 7Go 固有の情報
+## 7Go4 固有の情報
 
 | 項目 | 値 |
 |------|-----|

@@ -1,4 +1,4 @@
-name: 7Go
+name: 7Go4
 
 options:
   minimumXcodeGenVersion: 2.45.0
@@ -23,7 +23,7 @@ settings:
       SERVER_URL: "https://sevengo.onrender.com"
 
 targets:
-  7Go:
+  7Go4:
     type: application
     platform: iOS
     deploymentTarget: "18.0"
@@ -34,14 +34,14 @@ targets:
       - path: ios/Assets.xcassets
       - path: ios/PrivacyInfo.xcprivacy
     dependencies:
-      - target: 7GoWatch
+      - target: 7Go4Watch
         embed: true
         link: false
       - sdk: UserNotifications.framework
     info:
       path: ios/Sources/Info.plist
       properties:
-        CFBundleDisplayName: 7Go
+        CFBundleDisplayName: 7Go4
         CFBundleShortVersionString: "2.3.0"
         CFBundleVersion: "3"
         ITSAppUsesNonExemptEncryption: false
@@ -58,7 +58,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.macminim4pro.sevengo
-        PRODUCT_NAME: 7Go
+        PRODUCT_NAME: 7Go4
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SERVER_URL: "$(SERVER_URL)"
       configs:
@@ -84,7 +84,7 @@ targets:
         name: Validate SERVER_URL
         basedOnDependencyAnalysis: false
 
-  7GoWatch:
+  7Go4Watch:
     type: application
     platform: watchOS
     deploymentTarget: "11.0"
@@ -100,7 +100,7 @@ targets:
     info:
       path: watch/Sources/Info.plist
       properties:
-        CFBundleDisplayName: 7Go
+        CFBundleDisplayName: 7Go4
         CFBundleShortVersionString: "2.3.0"
         CFBundleVersion: "3"
         ITSAppUsesNonExemptEncryption: false
@@ -110,16 +110,16 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.macminim4pro.sevengo.watchkitapp
-        PRODUCT_NAME: 7GoWatch
+        PRODUCT_NAME: 7Go4Watch
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SERVER_URL: "$(SERVER_URL)"
         CODE_SIGN_ENTITLEMENTS: watch/7GoWatch.entitlements
 
 schemes:
-  7Go:
+  7Go4:
     build:
       targets:
-        7Go: all
+        7Go4: all
     run:
       config: Debug
       environmentVariables:
@@ -129,10 +129,10 @@ schemes:
     archive:
       config: Release
 
-  7GoWatch:
+  7Go4Watch:
     build:
       targets:
-        7GoWatch: all
+        7Go4Watch: all
     run:
       config: Debug
     archive:

@@ -17,6 +17,7 @@ struct PendingSignal: Identifiable, Codable, Sendable {
     let id: String
     let senderId: String
     let senderName: String
+    let emoji: String
     let createdAt: String
 }
 
@@ -105,12 +106,43 @@ struct WatchAPIClient: Sendable {
     // MARK: - Signal
 
     func sendSignal(to friendId: String, token: String) async throws {
-        struct Req: Encodable { let friendId: String }
-        let _: EmptyResponse = try await post("signal", body: Req(friendId: friendId), token: token)
+        struct Req: Encodable {
+            let friendId: String
+            let emoji: String
+        }
+        let _: EmptyResponse = try await post("signal", body: Req(friendId: friendId, emoji: "☕️"), token: token)
     }
 
     func getPendingSignals(token: String) async throws -> [PendingSignal] {
         try await get(url: baseURL.appending(path: "signals/pending"), token: token)
+    }
+
+    func sendSignal(to friendId: String, emoji: String, token: String) async throws {
+        struct Req: Encodable {
+            let friendId: String
+            let emoji: String
+        }
+        let _: EmptyResponse = try await post("signal", body: Req(friendId: friendId, emoji: emoji), token: token)
+    }
+
+    func registerDevice(pushToken: String, deviceKind: String, pushTopic: String, token: String) async throws {
+        struct Req: Encodable {
+            let pushToken: String
+            let platform: String
+            let deviceKind: String
+            let pushTopic: String
+        }
+
+        let _: EmptyResponse = try await post(
+            "devices/register",
+            body: Req(
+                pushToken: pushToken,
+                platform: "watchos",
+                deviceKind: deviceKind,
+                pushTopic: pushTopic
+            ),
+            token: token
+        )
     }
 
     // MARK: - Private

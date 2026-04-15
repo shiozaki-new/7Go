@@ -14,6 +14,7 @@ struct PendingSignal: Identifiable, Codable, Sendable {
     let id: String
     let senderId: String
     let senderName: String
+    let emoji: String
     let createdAt: String
 }
 
@@ -36,6 +37,7 @@ final class UserSession {
             let user = try? JSONDecoder().decode(AppUser.self, from: data)
         else { return }
         currentUser = user
+        await PushRegistrationManager.shared.registerIfPossible(sessionToken: user.sessionToken)
     }
 
     func handleSignIn(result: Result<ASAuthorization, Error>) async {
@@ -112,6 +114,7 @@ final class UserSession {
         suggestedName = nil
         UserDefaults.standard.removeObject(forKey: "currentUser")
         PhoneSessionSync.shared.clearSession()
+        PushRegistrationManager.shared.clearSession()
     }
 
     private func persist(_ user: AppUser) {
@@ -120,6 +123,9 @@ final class UserSession {
             UserDefaults.standard.set(data, forKey: "currentUser")
         }
         PhoneSessionSync.shared.sendSession(user: user)
+        Task {
+            await PushRegistrationManager.shared.registerIfPossible(sessionToken: user.sessionToken)
+        }
     }
 
     private func resolvedDisplayName(from credential: ASAuthorizationAppleIDCredential) -> String {
@@ -136,6 +142,6 @@ final class UserSession {
             return String(localPart.prefix(20))
         }
 
-        return "7Go-\(credential.user.suffix(6))"
+        return "7Go4-\(credential.user.suffix(6))"
     }
 }

@@ -1,5 +1,26 @@
 import SwiftUI
 
+// MARK: - Signal Options
+
+fileprivate struct SignalOption: Identifiable, Hashable {
+    let emoji: String
+    let label: String
+
+    var id: String { emoji }
+
+    static let all: [SignalOption] = [
+        .init(emoji: "🏪", label: "コンビニ"),
+        .init(emoji: "☕️", label: "コーヒー"),
+        .init(emoji: "🍽️", label: "ランチ"),
+        .init(emoji: "🚻", label: "トイレ"),
+        .init(emoji: "🏠", label: "家"),
+        .init(emoji: "🏢", label: "会社"),
+        .init(emoji: "🏫", label: "学校"),
+        .init(emoji: "🤫", label: "会議中"),
+        .init(emoji: "🚑", label: "緊急"),
+    ]
+}
+
 // MARK: - Toast Model
 
 fileprivate enum ToastStyle {
@@ -38,7 +59,7 @@ final class HomeViewModel {
     var friends: [Friend] = []
     var isLoading = false
     var isInitialLoad = true
-    var sendingToId: String?
+    var sendingKey: String?
     fileprivate var toast: ToastMessage?
 
     private var toastDismissTask: Task<Void, Never>?
@@ -49,9 +70,10 @@ final class HomeViewModel {
             isLoading = false
             isInitialLoad = false
         }
+
         do {
             let loaded = try await APIClient.shared.getFriends(token: token)
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(.easeInOut(duration: 0.25)) {
                 friends = loaded
             }
         } catch {
@@ -59,14 +81,16 @@ final class HomeViewModel {
         }
     }
 
-    func send(to friend: Friend, token: String) async {
-        guard sendingToId == nil else { return }
-        sendingToId = friend.id
-        defer { sendingToId = nil }
+    func send(to friend: Friend, emoji: String, token: String) async {
+        let key = "\(friend.id)|\(emoji)"
+        guard sendingKey == nil else { return }
+        sendingKey = key
+        defer { sendingKey = nil }
+
         do {
-            try await APIClient.shared.sendSignal(to: friend.id, token: token)
+            try await APIClient.shared.sendSignal(to: friend.id, emoji: emoji, token: token)
             triggerHaptic(.success)
-            showToast("\(friend.displayName) に送信しました", style: .success)
+            showToast("\(friend.displayName) に \(emoji) を送りました", style: .success)
         } catch {
             triggerHaptic(.error)
             showToast(friendlyMessage(from: error), style: .error)
@@ -76,10 +100,10 @@ final class HomeViewModel {
     func remove(friend: Friend, token: String) async {
         do {
             try await APIClient.shared.removeFriend(friendId: friend.id, token: token)
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(.easeInOut(duration: 0.25)) {
                 friends.removeAll { $0.id == friend.id }
             }
-            showToast("\(friend.displayName) を削除しました", style: .success)
+            showToast("\(friend.displayName) との接続を解除しました", style: .success)
         } catch {
             showToast(friendlyMessage(from: error), style: .error)
         }
@@ -91,15 +115,13 @@ final class HomeViewModel {
         }
     }
 
-    // MARK: - Private
-
     private func showToast(_ text: String, style: ToastStyle) {
         toastDismissTask?.cancel()
-        withAnimation(.spring(duration: 0.3)) {
+        withAnimation(.spring(duration: 0.28)) {
             toast = ToastMessage(text: text, style: style)
         }
         toastDismissTask = Task {
-            try? await Task.sleep(for: .seconds(2.5))
+            try? await Task.sleep(for: .seconds(2.4))
             guard !Task.isCancelled else { return }
             dismissToast()
         }
@@ -117,12 +139,12 @@ final class HomeViewModel {
     }
 }
 
-// MARK: - HomeView
+// MARK: - Home View
 
 struct HomeView: View {
     @Environment(UserSession.self) private var session
     @State private var vm = HomeViewModel()
-    @State private var showSearch = false
+    @State private var showPairing = false
     @State private var showSetup = false
 
     private var token: String {
@@ -135,7 +157,7 @@ struct HomeView: View {
                 content
                 loadingOverlay
             }
-            .navigationTitle("7Go")
+            .navigationTitle("7Go4")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
@@ -147,7 +169,7 @@ struct HomeView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        showSearch = true
+                        showPairing = true
                     } label: {
                         Image(systemName: "person.badge.plus")
                             .fontWeight(.medium)
@@ -157,7 +179,7 @@ struct HomeView: View {
             .overlay(alignment: .top) {
                 toastBanner
             }
-            .sheet(isPresented: $showSearch) {
+            .sheet(isPresented: $showPairing) {
                 FriendSearchView()
                     .onDisappear {
                         Task { await vm.load(token: token) }
@@ -172,98 +194,82 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Content
-
     @ViewBuilder
     private var content: some View {
         if vm.friends.isEmpty && !vm.isLoading {
             emptyStateView
         } else {
-            friendsList
+            friendsBoard
         }
     }
-
-    // MARK: - Empty State
 
     private var emptyStateView: some View {
         VStack(spacing: 20) {
             Spacer()
 
-            Image(systemName: "person.2.slash")
-                .font(.system(size: 64))
+            Image(systemName: "applewatch.radiowaves.left.and.right")
+                .font(.system(size: 60))
                 .foregroundStyle(.tertiary)
-                .symbolEffect(.pulse, options: .repeating.speed(0.5))
 
             VStack(spacing: 8) {
-                Text("まだ友達がいません")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.primary)
+                Text("まだつながっていません")
+                    .font(.title3.weight(.semibold))
 
-                Text("友達を追加して、サインを送り合おう")
+                Text("6桁コードで相手を追加すると、\nすぐに絵文字を送れます。")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
 
             Button {
-                showSearch = true
+                showPairing = true
             } label: {
-                Label("友達を追加する", systemImage: "person.badge.plus")
+                Label("コードでつなぐ", systemImage: "number")
                     .font(.headline)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.accentColor)
-            .padding(.top, 8)
 
             Spacer()
         }
         .padding()
     }
 
-    // MARK: - Friends List
-
-    private var friendsList: some View {
-        List {
-            ForEach(vm.friends) { friend in
-                FriendRow(
-                    friend: friend,
-                    isSending: vm.sendingToId == friend.id,
-                    isDisabled: vm.sendingToId != nil,
-                    onSend: {
-                        Task { await vm.send(to: friend, token: token) }
-                    }
-                )
+    private var friendsBoard: some View {
+        ScrollView {
+            LazyVStack(spacing: 18) {
+                ForEach(vm.friends) { friend in
+                    FriendPagerCard(
+                        friend: friend,
+                        sendingKey: vm.sendingKey,
+                        onSend: { emoji in
+                            Task { await vm.send(to: friend, emoji: emoji, token: token) }
+                        },
+                        onRemove: {
+                            Task { await vm.remove(friend: friend, token: token) }
+                        }
+                    )
+                }
             }
-            .onDelete { indexSet in
-                guard let index = indexSet.first else { return }
-                let friend = vm.friends[index]
-                Task { await vm.remove(friend: friend, token: token) }
-            }
+            .padding()
         }
-        .listStyle(.insetGrouped)
         .refreshable {
             await vm.load(token: token)
         }
-        .animation(.easeInOut(duration: 0.3), value: vm.friends.map(\.id))
     }
-
-    // MARK: - Loading Overlay
 
     @ViewBuilder
     private var loadingOverlay: some View {
         if vm.isLoading && vm.isInitialLoad {
             ZStack {
                 Color(.systemBackground)
-                    .opacity(0.8)
+                    .opacity(0.82)
                     .ignoresSafeArea()
 
-                VStack(spacing: 16) {
+                VStack(spacing: 12) {
                     ProgressView()
-                        .scaleEffect(1.2)
-                        .tint(.accentColor)
+                        .scaleEffect(1.15)
                     Text("読み込み中...")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -272,8 +278,6 @@ struct HomeView: View {
             .transition(.opacity)
         }
     }
-
-    // MARK: - Toast Banner
 
     @ViewBuilder
     private var toastBanner: some View {
@@ -284,8 +288,7 @@ struct HomeView: View {
                     .font(.body.weight(.semibold))
 
                 Text(toast.text)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                    .font(.subheadline.weight(.medium))
                     .lineLimit(2)
 
                 Spacer(minLength: 0)
@@ -311,62 +314,99 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Friend Row
+// MARK: - Card
 
-private struct FriendRow: View {
+private struct FriendPagerCard: View {
     let friend: Friend
-    let isSending: Bool
-    let isDisabled: Bool
-    let onSend: () -> Void
+    let sendingKey: String?
+    let onSend: (String) -> Void
+    let onRemove: () -> Void
 
-    private var avatarInitial: String {
-        String(friend.displayName.prefix(1))
-    }
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 3)
 
     var body: some View {
-        HStack(spacing: 14) {
-            // Avatar
-            Text(avatarInitial)
-                .font(.system(.body, design: .rounded, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 40, height: 40)
-                .background(
-                    Circle()
-                        .fill(Color.accentColor.gradient)
-                )
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(friend.displayName)
+                        .font(.headline)
 
-            // Name
-            Text(friend.displayName)
-                .font(.body)
-                .fontWeight(.medium)
-                .lineLimit(1)
-
-            Spacer()
-
-            // Send button
-            Button {
-                onSend()
-            } label: {
-                ZStack {
-                    if isSending {
-                        ProgressView()
-                            .tint(Color.accentColor)
-                    } else {
-                        Image(systemName: "hand.tap.fill")
-                            .font(.title3)
-                            .foregroundStyle(Color.accentColor)
-                            .symbolEffect(.bounce, value: isSending)
-                    }
+                    Text("1タップで送信")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .frame(width: 44, height: 44)
-                .background(
-                    Circle()
-                        .fill(Color.accentColor.opacity(0.1))
-                )
+
+                Spacer()
+
+                Menu {
+                    Button(role: .destructive) {
+                        onRemove()
+                    } label: {
+                        Label("接続を解除", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                }
             }
-            .buttonStyle(.plain)
-            .disabled(isDisabled)
+
+            LazyVGrid(columns: columns, spacing: 10) {
+                ForEach(SignalOption.all) { option in
+                    SignalPadButton(
+                        option: option,
+                        isSending: sendingKey == "\(friend.id)|\(option.emoji)",
+                        action: { onSend(option.emoji) }
+                    )
+                }
+            }
         }
-        .padding(.vertical, 4)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+}
+
+private struct SignalPadButton: View {
+    let option: SignalOption
+    let isSending: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            action()
+        } label: {
+            VStack(spacing: 6) {
+                if isSending {
+                    ProgressView()
+                        .tint(.accentColor)
+                        .frame(height: 28)
+                } else {
+                    Text(option.emoji)
+                        .font(.system(size: 28))
+                        .frame(height: 28)
+                }
+
+                Text(option.label)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 82)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(.systemBackground))
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.accentColor.opacity(isSending ? 0.4 : 0.08), lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(isSending)
     }
 }

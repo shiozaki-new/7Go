@@ -3,7 +3,7 @@ import UserNotifications
 import WatchKit
 
 @main
-struct SevenGoWatchApp: App {
+struct SevenGo4WatchApp: App {
     @WKApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     var body: some Scene {
@@ -33,7 +33,20 @@ final class AppDelegate: NSObject, WKApplicationDelegate {
     func applicationDidBecomeActive() {
         Task {
             await SignalStore.shared.refreshNotificationStatus()
+            await WatchPushRegistration.shared.registerIfPossible(
+                sessionToken: WatchUserSession.shared.currentUser?.sessionToken
+            )
         }
+    }
+
+    func didRegisterForRemoteNotifications(withDeviceToken deviceToken: Data) {
+        Task { @MainActor in
+            WatchPushRegistration.shared.updateDeviceToken(deviceToken)
+        }
+    }
+
+    func didFailToRegisterForRemoteNotificationsWithError(_ error: Error) {
+        print("Watch APNs registration failed: \(error.localizedDescription)")
     }
 
     private func requestNotificationPermission() {
@@ -46,6 +59,9 @@ final class AppDelegate: NSObject, WKApplicationDelegate {
 
             Task {
                 await SignalStore.shared.refreshNotificationStatus()
+                await MainActor.run {
+                    WKExtension.shared().registerForRemoteNotifications()
+                }
             }
         }
     }
@@ -61,11 +77,13 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate, Se
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
         let senderName = NotificationPayload.senderName(from: notification)
+        let emoji = NotificationPayload.emoji(from: notification)
         let notificationID = notification.request.identifier
 
         await MainActor.run {
             SignalStore.shared.recordSignal(
                 from: senderName,
+                emoji: emoji,
                 notificationID: notificationID
             )
         }
@@ -78,11 +96,13 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate, Se
         didReceive response: UNNotificationResponse
     ) async {
         let senderName = NotificationPayload.senderName(from: response.notification)
+        let emoji = NotificationPayload.emoji(from: response.notification)
         let notificationID = response.notification.request.identifier
 
         await MainActor.run {
             SignalStore.shared.recordSignal(
                 from: senderName,
+                emoji: emoji,
                 notificationID: notificationID
             )
         }

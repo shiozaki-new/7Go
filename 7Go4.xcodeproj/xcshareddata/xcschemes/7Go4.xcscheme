@@ -15,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "BD16DA69AE48C071EB161840"
-               BuildableName = "7Go.app"
-               BlueprintName = "7Go"
-               ReferencedContainer = "container:7Go.xcodeproj">
+               BlueprintIdentifier = "8B5F005E76DFD869F1D70146"
+               BuildableName = "7Go4.app"
+               BlueprintName = "7Go4"
+               ReferencedContainer = "container:7Go4.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -32,10 +32,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "BD16DA69AE48C071EB161840"
-            BuildableName = "7Go.app"
-            BlueprintName = "7Go"
-            ReferencedContainer = "container:7Go.xcodeproj">
+            BlueprintIdentifier = "8B5F005E76DFD869F1D70146"
+            BuildableName = "7Go4.app"
+            BlueprintName = "7Go4"
+            ReferencedContainer = "container:7Go4.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
@@ -55,10 +55,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "BD16DA69AE48C071EB161840"
-            BuildableName = "7Go.app"
-            BlueprintName = "7Go"
-            ReferencedContainer = "container:7Go.xcodeproj">
+            BlueprintIdentifier = "8B5F005E76DFD869F1D70146"
+            BuildableName = "7Go4.app"
+            BlueprintName = "7Go4"
+            ReferencedContainer = "container:7Go4.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
@@ -81,10 +81,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "BD16DA69AE48C071EB161840"
-            BuildableName = "7Go.app"
-            BlueprintName = "7Go"
-            ReferencedContainer = "container:7Go.xcodeproj">
+            BlueprintIdentifier = "8B5F005E76DFD869F1D70146"
+            BuildableName = "7Go4.app"
+            BlueprintName = "7Go4"
+            ReferencedContainer = "container:7Go4.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
